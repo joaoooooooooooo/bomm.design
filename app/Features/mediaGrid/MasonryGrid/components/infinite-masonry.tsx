@@ -1,17 +1,14 @@
 "use client";
-// beui.dev/components/blocks/infinite-masonry
 
-import { useVirtualizer } from "@tanstack/react-virtual";
+import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { AlertCircle, Inbox } from "lucide-react";
-import { motion, useReducedMotion } from "motion/react";
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
-  type MutableRefObject,
   type ReactNode,
 } from "react";
-import { EASE_OUT, SPRING_PANEL } from "../libs/ease";
 import { cn } from "@/lib/utils";
 
 export type InfiniteMasonryKey = string | number | bigint;
@@ -24,8 +21,9 @@ export interface InfiniteMasonryProps<T> {
   hasMore: boolean;
   loading?: boolean;
   error?: ReactNode;
+  debug?: boolean;
   onRetry?: () => void;
-  estimateSize?: (item: T, index: number) => number;
+  estimateSize?: (item: T, index: number, columnWidth: number) => number;
   renderLoadingItem?: (index: number) => ReactNode;
   emptyState?: ReactNode;
   endState?: ReactNode;
@@ -34,17 +32,11 @@ export interface InfiniteMasonryProps<T> {
   gap?: number;
   overscan?: number;
   prefetch?: number;
-  animateItems?: boolean;
   ariaLabel?: string;
   className?: string;
   contentClassName?: string;
   itemClassName?: string;
 }
-
-type MasonryMetrics = {
-  columns: number;
-  width: number;
-};
 
 function useMasonryMetrics({
   elementRef,
@@ -57,12 +49,9 @@ function useMasonryMetrics({
   maxColumns: number;
   minColumnWidth: number;
 }) {
-  const [metrics, setMetrics] = useState<MasonryMetrics>({
-    columns: 1,
-    width: 0,
-  });
+  const [metrics, setMetrics] = useState({ columns: 1, width: 0 });
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const element = elementRef.current;
     if (!element) return;
 
@@ -71,7 +60,6 @@ function useMasonryMetrics({
         maxColumns,
         Math.max(1, Math.floor((width + gap) / (minColumnWidth + gap))),
       );
-
       setMetrics((current) =>
         current.columns === columns && current.width === width
           ? current
@@ -80,12 +68,8 @@ function useMasonryMetrics({
     };
 
     update(element.getBoundingClientRect().width);
-
-    const observer = new ResizeObserver(([entry]) => {
-      update(entry.contentRect.width);
-    });
+    const observer = new ResizeObserver(([entry]) => update(entry.contentRect.width));
     observer.observe(element);
-
     return () => observer.disconnect();
   }, [elementRef, gap, maxColumns, minColumnWidth]);
 
@@ -96,7 +80,7 @@ function DefaultLoadingItem({ index }: { index: number }) {
   return (
     <div
       aria-hidden="true"
-      className="animate-pulse rounded-2xl border border-border bg-card p-3"
+      className="rounded-2xl border border-border bg-card p-3"
       style={{ minHeight: 144 + (index % 3) * 36 }}
     >
       <div className="h-3 w-2/3 rounded-full bg-muted" />
@@ -118,43 +102,6 @@ function DefaultEmptyState() {
   );
 }
 
-function MasonryItemReveal({
-  itemKey,
-  lane,
-  revealedKeys,
-  animate,
-  children,
-}: {
-  itemKey: InfiniteMasonryKey;
-  lane: number;
-  revealedKeys: MutableRefObject<Set<InfiniteMasonryKey>>;
-  animate: boolean;
-  children: ReactNode;
-}) {
-  const [shouldReveal] = useState(
-    () => animate && !revealedKeys.current.has(itemKey),
-  );
-
-  useEffect(() => {
-    revealedKeys.current.add(itemKey);
-  }, [itemKey, revealedKeys]);
-
-  const delay = Math.min(lane, 3) * 0.04;
-
-  return (
-    <motion.div
-      initial={shouldReveal ? { opacity: 0, y: 12 } : false}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{
-        y: { ...SPRING_PANEL, delay },
-        opacity: { duration: 0.2, ease: EASE_OUT, delay },
-      }}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
 export function InfiniteMasonry<T>({
   items,
   getItemKey,
@@ -163,6 +110,7 @@ export function InfiniteMasonry<T>({
   hasMore,
   loading = false,
   error,
+  debug = false,
   onRetry,
   estimateSize = () => 240,
   renderLoadingItem = (index) => <DefaultLoadingItem index={index} />,
@@ -173,19 +121,15 @@ export function InfiniteMasonry<T>({
   gap = 12,
   overscan = 4,
   prefetch = 3,
-  animateItems = true,
   ariaLabel = "Infinite masonry feed",
   className,
   contentClassName,
   itemClassName,
 }: InfiniteMasonryProps<T>) {
-  const reduceMotion = useReducedMotion();
-  const scrollRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const loadMoreRef = useRef(onLoadMore);
   const loadPendingRef = useRef(false);
-  const initialItemCountRef = useRef(items.length);
-  const revealedKeysRef = useRef(new Set<InfiniteMasonryKey>());
+  const [scrollMargin, setScrollMargin] = useState(0);
   const { columns, width } = useMasonryMetrics({
     elementRef: contentRef,
     gap,
@@ -201,22 +145,39 @@ export function InfiniteMasonry<T>({
     if (!loading) loadPendingRef.current = false;
   }, [loading]);
 
+  useLayoutEffect(() => {
+    const content = contentRef.current;
+    if (!content) return;
+
+    const updateScrollMargin = () => {
+      setScrollMargin(content.getBoundingClientRect().top + window.scrollY);
+    };
+
+    updateScrollMargin();
+    const observer = new ResizeObserver(updateScrollMargin);
+    observer.observe(content);
+    return () => observer.disconnect();
+  }, []);
+
   const hasError = error !== undefined && error !== null;
   const tailCount = hasError ? 1 : loading ? columns : 0;
-  const virtualizer = useVirtualizer({
+  const columnWidth =
+    columns > 0 ? Math.max(0, (width - gap * (columns - 1)) / columns) : 0;
+  const virtualizer = useWindowVirtualizer({
     count: items.length + tailCount,
-    getScrollElement: () => scrollRef.current,
     getItemKey: (index) =>
       index < items.length
         ? getItemKey(items[index], index)
         : `masonry-tail-${index - items.length}`,
     estimateSize: (index) =>
       index < items.length
-        ? estimateSize(items[index], index)
+        ? estimateSize(items[index], index, columnWidth)
         : 144 + ((index - items.length) % 3) * 36,
     gap,
     lanes: columns,
     overscan: overscan * columns,
+    scrollMargin,
+    useFlushSync: false,
   });
 
   const virtualItems = virtualizer.getVirtualItems();
@@ -253,18 +214,12 @@ export function InfiniteMasonry<T>({
     );
   }
 
-  const columnWidth =
-    columns > 0 ? Math.max(0, (width - gap * (columns - 1)) / columns) : 0;
-
   return (
     <section
-      ref={scrollRef}
       aria-label={ariaLabel}
       aria-busy={loading}
-      className={cn(
-        "w-full contain-[layout_paint] overflow-y-auto overscroll-none",
-        className,
-      )}
+      data-debug={debug || undefined}
+      className={cn("w-full contain-[layout_paint]", className)}
     >
       <div
         ref={contentRef}
@@ -283,12 +238,18 @@ export function InfiniteMasonry<T>({
               className={cn(
                 "absolute left-0 top-0 will-change-transform",
                 !isTail && itemClassName,
+                debug && "outline outline-1 outline-dashed outline-amber-400",
               )}
               style={{
                 width: columnWidth,
-                transform: `translate3d(${virtualItem.lane * (columnWidth + gap)}px, ${virtualItem.start}px, 0)`,
+                transform: `translate3d(${virtualItem.lane * (columnWidth + gap)}px, ${virtualItem.start - scrollMargin}px, 0)`,
               }}
             >
+              {debug ? (
+                <span className="pointer-events-none absolute left-1 top-1 z-30 rounded bg-amber-400 px-1 py-0.5 font-mono text-[10px] leading-none text-black">
+                  masonry {virtualItem.index}
+                </span>
+              ) : null}
               {isTail ? (
                 hasError ? (
                   <div className="flex min-h-36 flex-col items-start justify-center rounded-2xl border border-destructive/20 bg-destructive/5 p-4">
@@ -296,9 +257,7 @@ export function InfiniteMasonry<T>({
                       <AlertCircle className="size-4" aria-hidden="true" />
                       <p className="text-sm font-medium">Couldn&apos;t load more</p>
                     </div>
-                    <div className="mt-2 text-xs leading-5 text-muted-foreground">
-                      {error}
-                    </div>
+                    <div className="mt-2 text-xs leading-5 text-muted-foreground">{error}</div>
                     {onRetry ? (
                       <button
                         type="button"
@@ -313,27 +272,14 @@ export function InfiniteMasonry<T>({
                   renderLoadingItem(tailIndex)
                 )
               ) : (
-                <MasonryItemReveal
-                  itemKey={virtualItem.key}
-                  lane={virtualItem.lane}
-                  revealedKeys={revealedKeysRef}
-                  animate={
-                    animateItems &&
-                    !reduceMotion &&
-                    virtualItem.index >= initialItemCountRef.current
-                  }
-                >
-                  {renderItem(items[virtualItem.index], virtualItem.index)}
-                </MasonryItemReveal>
+                renderItem(items[virtualItem.index], virtualItem.index)
               )}
             </div>
           );
         })}
       </div>
       {!hasMore && items.length > 0 && endState ? (
-        <div className="py-4 text-center text-xs text-muted-foreground">
-          {endState}
-        </div>
+        <div className="py-4 text-center text-xs text-muted-foreground">{endState}</div>
       ) : null}
       <span className="sr-only" aria-live="polite">
         {loading ? "Loading more items" : null}
