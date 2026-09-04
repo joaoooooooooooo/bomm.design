@@ -1,23 +1,31 @@
 import { AppBreadcrumbs } from "@/app/Features/sidebar/components/app-breadcrumbs";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Separator } from "@/components/ui/separator";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { motion } from "motion/react";
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+} from "@/components/motion/tabs";
 
-export function AppHeader({
-  page,
-}: {
-  page: string;
-}) {
+export function AppHeader({ page }: { page: string }) {
   return (
-    <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-border bg-background/95 px-4 backdrop-blur supports-backdrop-filter:bg-background/80 md:px-6">
-      <div className="grid grid-cols-[auto_auto_1fr] items-center gap-3">
-        <SidebarTrigger />
-        <Separator className="h-4" orientation="vertical" />
-        <AppBreadcrumbs page={page} />
-      </div>
+    <motion.div className = "flex flex-col h-fit pt-8 py-4 items-start justify-start gap-12"> 
+
+    <div className="flex max-w-xl flex-col gap-4 px-4 md:px-6">
+      <h1 className="font-normal text-3xl">Curadoria humana e sem compromisso de bons designs  e ferramentas do Brasil (e do mundo)</h1>
+    </div>
+    <motion.div className="flex flex-row w-full items-center justify-between border-b border-border bg-background h-14 sticky top-0 z-20 px-4 md:px-6">
+      
+          <Tabs defaultValue="overview" variant="underline">
+  <TabsList >
+    <TabsTrigger value="overview">Overview</TabsTrigger>
+    <TabsTrigger value="activity">Activity</TabsTrigger>
+    <TabsTrigger value="settings">Settings</TabsTrigger>
+  </TabsList>
+</Tabs>
       <div className="flex items-center gap-2">
         <ThemeToggle />
       </div>
-    </header>
+    </motion.div></motion.div>
   );
 }

@@ -21,7 +21,6 @@ export interface InfiniteMasonryProps<T> {
   hasMore: boolean;
   loading?: boolean;
   error?: ReactNode;
-  debug?: boolean;
   onRetry?: () => void;
   estimateSize?: (item: T, index: number, columnWidth: number) => number;
   renderLoadingItem?: (index: number) => ReactNode;
@@ -110,7 +109,6 @@ export function InfiniteMasonry<T>({
   hasMore,
   loading = false,
   error,
-  debug = false,
   onRetry,
   estimateSize = () => 240,
   renderLoadingItem = (index) => <DefaultLoadingItem index={index} />,
@@ -218,7 +216,6 @@ export function InfiniteMasonry<T>({
     <section
       aria-label={ariaLabel}
       aria-busy={loading}
-      data-debug={debug || undefined}
       className={cn("w-full contain-[layout_paint]", className)}
     >
       <div
@@ -238,18 +235,12 @@ export function InfiniteMasonry<T>({
               className={cn(
                 "absolute left-0 top-0 will-change-transform",
                 !isTail && itemClassName,
-                debug && "outline outline-1 outline-dashed outline-amber-400",
               )}
               style={{
                 width: columnWidth,
                 transform: `translate3d(${virtualItem.lane * (columnWidth + gap)}px, ${virtualItem.start - scrollMargin}px, 0)`,
               }}
             >
-              {debug ? (
-                <span className="pointer-events-none absolute left-1 top-1 z-30 rounded bg-amber-400 px-1 py-0.5 font-mono text-[10px] leading-none text-black">
-                  masonry {virtualItem.index}
-                </span>
-              ) : null}
               {isTail ? (
                 hasError ? (
                   <div className="flex min-h-36 flex-col items-start justify-center rounded-2xl border border-destructive/20 bg-destructive/5 p-4">

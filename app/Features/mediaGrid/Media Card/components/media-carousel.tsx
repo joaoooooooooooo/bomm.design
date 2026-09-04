@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   animate,
   motion,
@@ -14,6 +14,9 @@ import { MediaPreview } from "./media-preview";
 const GAP = 16;
 const SLIDE_HEIGHT_RATIO = 0.68;
 const MOMENTUM_PROJECTION = 0.35;
+const WHEEL_SNAP_THRESHOLD = 36;
+const WHEEL_SNAP_COOLDOWN = 180;
+const VIRTUAL_SLIDE_OVERSCAN = 2;
 const SNAP_TRANSITION = { type: "spring", bounce: 0, visualDuration: 0.24 } as const;
 const DRAG_INERTIA = {
   bounceDamping: 28,
@@ -21,6 +24,34 @@ const DRAG_INERTIA = {
   power: MOMENTUM_PROJECTION,
   timeConstant: 95,
 } as const;
+type ReleaseWaveConfig = {
+  bounce: number;
+  compression: number;
+  duration: number;
+  imageElastic: number;
+  imageX: number;
+  imageY: number;
+  noise: number;
+  radius: number;
+  stagger: number;
+};
+
+const DEFAULT_RELEASE_WAVE: ReleaseWaveConfig = {
+  bounce: 0.18,
+  compression: 0.028,
+  duration: 0.26,
+  imageElastic: 0.18,
+  imageX: 18,
+  imageY: 12,
+  noise: 0.008,
+  radius: 2,
+  stagger: 0.032,
+};
+
+type ReleaseWave = {
+  id: number;
+  originIndex: number;
+};
 
 type MediaCarouselProps = {
   activeIndex: number;
@@ -38,14 +69,20 @@ function CarouselSlide({
   pitch,
   slideHeight,
   trackY,
+  top,
   shouldPlay,
+  releaseWave,
+  releaseWaveConfig,
 }: {
   index: number;
   item: MediaCardItem;
   pitch: number;
   slideHeight: number;
   shouldPlay: boolean;
+  top: number;
   trackY: MotionValue<number>;
+  releaseWave: ReleaseWave | null;
+  releaseWaveConfig: ReleaseWaveConfig;
 }) {
   const safePitch = Math.max(1, pitch);
   const centerOffset = -index * safePitch;
@@ -60,18 +97,71 @@ function CarouselSlide({
     range,
     [0.36, 1, 0.36],
   );
+  const releaseScale = useMotionValue(1);
+  const imageX = useMotionValue(0);
+  const imageY = useMotionValue(0);
+
+  useEffect(() => {
+    if (!releaseWave) return;
+
+    const distance = Math.abs(index - releaseWave.originIndex);
+    if (distance > releaseWaveConfig.radius) return;
+
+    const noise = ((index * 17 + releaseWave.id * 13) % 10) * releaseWaveConfig.noise / 10;
+    const delay = distance * releaseWaveConfig.stagger + noise;
+    let animation: ReturnType<typeof animate> | undefined;
+    const timer = window.setTimeout(() => {
+      releaseScale.jump(1 - releaseWaveConfig.compression / (distance + 1));
+      animation = animate(releaseScale, 1, {
+        bounce: releaseWaveConfig.bounce,
+        type: "spring",
+        visualDuration: releaseWaveConfig.duration,
+      });
+    }, delay * 1000);
+
+    return () => {
+      window.clearTimeout(timer);
+      animation?.stop();
+    };
+  }, [index, releaseScale, releaseWave, releaseWaveConfig]);
+
+  useEffect(() => {
+    if (shouldPlay) return;
+    imageX.jump(0);
+    imageY.jump(0);
+  }, [imageX, imageY, shouldPlay]);
 
   return (
     <motion.div
-      className="mx-4 shrink-0 overflow-hidden rounded-2xl outline outline-1 outline-white/10"
-      style={{ height: slideHeight, opacity, scale }}
+      className="absolute left-4 right-4"
+      style={{ height: slideHeight, opacity, scale, top }}
     >
-      <MediaPreview
-        autoPlay={shouldPlay}
-        fit="contain"
-        media={item.media}
-        preload={shouldPlay ? "auto" : "metadata"}
-      />
+      <motion.div
+        className="h-full w-full"
+        drag={shouldPlay}
+        dragConstraints={{
+          bottom: releaseWaveConfig.imageY,
+          left: -releaseWaveConfig.imageX,
+          right: releaseWaveConfig.imageX,
+          top: -releaseWaveConfig.imageY,
+        }}
+        dragElastic={releaseWaveConfig.imageElastic}
+        dragMomentum={false}
+        dragPropagation
+        onDragEnd={() => {
+          void animate(imageX, 0, SNAP_TRANSITION);
+          void animate(imageY, 0, SNAP_TRANSITION);
+        }}
+        style={{ scale: releaseScale, x: imageX, y: imageY }}
+      >
+        <MediaPreview
+          autoPlay={shouldPlay}
+          className="rounded-2xl"
+          fit="contain"
+          media={item.media}
+          preload={shouldPlay ? "auto" : "none"}
+        />
+      </motion.div>
     </motion.div>
   );
 }
@@ -86,13 +176,29 @@ export function MediaCarousel({
   const hasInitiallyPositionedRef = useRef(false);
   const isMomentumSnapRef = useRef(false);
   const skipNextIndexSyncRef = useRef(false);
+  const releaseWaveIdRef = useRef(0);
+  const wheelDeltaRef = useRef(0);
+  const wheelLockedRef = useRef(false);
   const [viewportHeight, setViewportHeight] = useState(0);
   const [isReady, setIsReady] = useState(false);
+  const [releaseWave, setReleaseWave] = useState<ReleaseWave | null>(null);
+  const releaseWaveConfig = DEFAULT_RELEASE_WAVE;
   const y = useMotionValue(0);
   const slideHeight = viewportHeight * SLIDE_HEIGHT_RATIO;
   const pitch = slideHeight + GAP;
   const inset = (viewportHeight - slideHeight) / 2;
   const maxOffset = Math.max(0, (items.length - 1) * pitch);
+  const firstVisibleIndex = Math.max(0, activeIndex - VIRTUAL_SLIDE_OVERSCAN);
+  const lastVisibleIndex = Math.min(
+    items.length,
+    activeIndex + VIRTUAL_SLIDE_OVERSCAN + 1,
+  );
+  const visibleItems = items.slice(firstVisibleIndex, lastVisibleIndex);
+
+  const triggerReleaseWave = (originIndex: number) => {
+    releaseWaveIdRef.current += 1;
+    setReleaseWave({ id: releaseWaveIdRef.current, originIndex });
+  };
 
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
@@ -119,7 +225,29 @@ export function MediaCarousel({
   const snapTo = (index: number) => {
     const nextIndex = clampIndex(index, items.length);
     void animate(y, -nextIndex * pitch, SNAP_TRANSITION);
-    if (nextIndex !== activeIndex) onActiveIndexChange(nextIndex);
+    if (nextIndex !== activeIndex) {
+      triggerReleaseWave(nextIndex);
+      onActiveIndexChange(nextIndex);
+    }
+  };
+
+  const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+    if (Math.abs(event.deltaY) < Math.abs(event.deltaX)) return;
+
+    event.preventDefault();
+    if (wheelLockedRef.current) return;
+
+    wheelDeltaRef.current += event.deltaY;
+    if (Math.abs(wheelDeltaRef.current) < WHEEL_SNAP_THRESHOLD) return;
+
+    const direction = Math.sign(wheelDeltaRef.current);
+    wheelDeltaRef.current = 0;
+    wheelLockedRef.current = true;
+    snapTo(activeIndex + direction);
+
+    window.setTimeout(() => {
+      wheelLockedRef.current = false;
+    }, WHEEL_SNAP_COOLDOWN);
   };
 
   useLayoutEffect(() => {
@@ -138,10 +266,14 @@ export function MediaCarousel({
   return (
     <div
       ref={viewportRef}
-      className="relative h-full min-h-0 overflow-hidden bg-black"
+      className="relative h-full min-h-0 overflow-hidden bg-transparent"
     >
+      
       <motion.div
         aria-label="Collection media. Drag vertically to browse items."
+        initial={{ x: "-100%", opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        transition={{ type: "spring", duration: 0.4, bounce: 0 }}
         aria-roledescription="carousel"
         drag={pitch > 0 ? "y" : false}
         dragConstraints={{ bottom: 0, top: -maxOffset }}
@@ -160,6 +292,7 @@ export function MediaCarousel({
             items.length,
           );
 
+          triggerReleaseWave(nextIndex);
           if (nextIndex !== activeIndex) {
             isMomentumSnapRef.current = true;
             onActiveIndexChange(nextIndex);
@@ -182,18 +315,20 @@ export function MediaCarousel({
             snapTo(activeIndex - 1);
           }
         }}
+        onWheel={handleWheel}
         role="group"
         style={{
-          paddingBottom: inset,
-          paddingTop: inset,
           touchAction: "pan-x",
           visibility: isReady ? "visible" : "hidden",
           y,
         }}
         tabIndex={0}
-        className="flex w-full cursor-grab flex-col gap-4 active:cursor-grabbing"
+        className="relative h-full w-full cursor-grab active:cursor-grabbing"
       >
-        {items.map((item, index) => (
+        {visibleItems.map((item, offset) => {
+          const index = firstVisibleIndex + offset;
+
+          return (
           <CarouselSlide
             key={item.id}
             index={index}
@@ -201,9 +336,13 @@ export function MediaCarousel({
             pitch={pitch}
             slideHeight={slideHeight}
             shouldPlay={index === activeIndex}
+            top={inset + index * pitch}
             trackY={y}
+            releaseWave={releaseWave}
+            releaseWaveConfig={releaseWaveConfig}
           />
-        ))}
+          );
+        })}
       </motion.div>
     </div>
   );

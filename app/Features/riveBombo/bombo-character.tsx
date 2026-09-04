@@ -198,6 +198,9 @@ export function BomboCharacter({
     viewModelInstance,
   );
   const lastPositionRef = React.useRef({ x: -1, y: -1 });
+  const sidebarRectRef = React.useRef<DOMRect | null>(null);
+  const pendingPointerRef = React.useRef<{ x: number; y: number } | null>(null);
+  const animationFrameRef = React.useRef<number | null>(null);
 
   useBomboPalette(colorVariant, viewModelInstance);
 
@@ -225,11 +228,15 @@ export function BomboCharacter({
       return;
     }
 
+    const sidebar = document.querySelector<HTMLElement>(
+      '[data-slot="sidebar-container"]',
+    );
+    const updateSidebarRect = () => {
+      sidebarRectRef.current = sidebar?.getBoundingClientRect() ?? null;
+    };
+
     const updateFromViewport = (clientX: number, clientY: number) => {
-      const sidebar = document.querySelector<HTMLElement>(
-        '[data-slot="sidebar-container"]',
-      );
-      const sidebarRect = sidebar?.getBoundingClientRect() ?? null;
+      const sidebarRect = sidebarRectRef.current;
       const isInsideSidebar =
         sidebarRect !== null && isInsideRect(clientX, clientY, sidebarRect);
 
@@ -249,14 +256,42 @@ export function BomboCharacter({
     };
 
     const handleMouseMove = (event: MouseEvent) => {
-      updateFromViewport(event.clientX, event.clientY);
+      pendingPointerRef.current = { x: event.clientX, y: event.clientY };
+
+      if (animationFrameRef.current !== null) {
+        return;
+      }
+
+      animationFrameRef.current = window.requestAnimationFrame(() => {
+        animationFrameRef.current = null;
+        const pointer = pendingPointerRef.current;
+
+        if (pointer) {
+          updateFromViewport(pointer.x, pointer.y);
+        }
+      });
     };
 
+    updateSidebarRect();
     updateFromViewport(window.innerWidth / 2, window.innerHeight / 2);
     window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("resize", updateSidebarRect);
+    window.addEventListener("scroll", updateSidebarRect, true);
+
+    const resizeObserver = new ResizeObserver(updateSidebarRect);
+    if (sidebar) {
+      resizeObserver.observe(sidebar);
+    }
 
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("resize", updateSidebarRect);
+      window.removeEventListener("scroll", updateSidebarRect, true);
+      resizeObserver.disconnect();
+
+      if (animationFrameRef.current !== null) {
+        window.cancelAnimationFrame(animationFrameRef.current);
+      }
     };
   }, []);
 

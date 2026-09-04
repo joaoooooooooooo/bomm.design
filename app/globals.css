@@ -241,10 +241,42 @@
   }
   html {
     @apply font-sans;
+    scrollbar-color: gray transparent;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
   }
 }
 
 @layer utilities {
+  @supports selector(::-webkit-scrollbar) {
+    html {
+      scrollbar-color: auto;
+    }
+  }
+
+  html::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  html::-webkit-scrollbar-track,
+  html::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  html::-webkit-scrollbar-button,
+  html::-webkit-scrollbar-button:single-button,
+  html::-webkit-scrollbar-button:vertical:decrement,
+  html::-webkit-scrollbar-button:vertical:increment {
+    display: none;
+    height: 0;
+    width: 0;
+  }
+
+  html::-webkit-scrollbar-thumb {
+    background: gray;
+    border-radius: 999px;
+  }
+
   .sidebar-squircle {
     border-radius: var(--sidebar-squircle-radius, 1rem);
   }

@@ -16,14 +16,13 @@ export function ArrowLink({
   variant = "desktop",
   ...props
 }: ArrowLinkProps): React.ReactElement {
-  const isMobile = variant === "mobile";
+  const iconClassName = variant === "mobile" ? "size-[10]" : "size-[17]";
 
   return (
     <a
       aria-label={ariaLabel}
       className={cn(
-        "inline-flex  items-center justify-center rounded-full bg-black/25 transition-colors hover:bg-black/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80",
-        isMobile ? "size-8 text-white" : "size-8 text-white",
+        "inline-flex size-8 items-center justify-center rounded-full bg-black/25 text-white transition-colors hover:bg-black/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80",
         className,
       )}
       data-slot="arrow-link"
@@ -31,7 +30,7 @@ export function ArrowLink({
     >
       <ArrowUpRightIcon
         aria-hidden="true"
-        className={isMobile ? "size-[10]" : "size-[17]"}
+        className={iconClassName}
         weight="regular"
       />
     </a>

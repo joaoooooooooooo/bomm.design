@@ -6,22 +6,23 @@ import {
   DialogBackdrop,
   DialogClose,
   DialogPortal,
+  DialogPrimitive,
   DialogViewport,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { XIcon } from "lucide-react";
-import { DialogPrimitive } from "@/components/ui/dialog";
 import type { MediaCardItem } from "./media-card";
 import { MediaCarousel } from "./media-carousel";
 import { MediaDialogDetails } from "./media-dialog-details";
+import { motion } from "motion/react";
 
 function FixedMediaDialogContent({
-  debug,
   items,
+  onOpenChange,
   selectedIndex,
 }: {
-  debug: boolean;
   items: readonly MediaCardItem[];
+  onOpenChange: (open: boolean) => void;
   selectedIndex: number;
 }) {
   const [activeIndex, setActiveIndex] = useState(selectedIndex);
@@ -31,34 +32,41 @@ function FixedMediaDialogContent({
 
   return (
     <>
-      <DialogBackdrop className="bg-background/95 transition-none" />
+      <DialogBackdrop className="bg-background/90" />
       <DialogViewport className="block p-0">
         <DialogPrimitive.Popup
-          className="relative h-full w-full overflow-hidden bg-background text-foreground outline-none"
-          data-debug={debug || undefined}
-          data-slot="media-card-dialog"
+          className="relative h-full w-full overflow-hidden bg-background/90 "
+          onClick={() => onOpenChange(false)}
+
         >
-          <div className="grid h-full min-h-0 grid-rows-[minmax(0,1fr)_auto] md:grid-cols-[minmax(0,1.2fr)_minmax(20rem,0.8fr)] md:grid-rows-1">
-            <section aria-label="Collection media" className="min-h-0">
+          <div className="relative z-10 grid h-full justify-between md:grid-cols-[minmax(0,0.5fr)_minmax(20rem,0.3fr)] md:grid-rows-1">
+            <section
+              aria-label="Collection media"
+              className="min-h-0"
+              onClick={(event) => event.stopPropagation()}
+            >
               <MediaCarousel
                 activeIndex={activeIndex}
                 items={items}
                 onActiveIndexChange={setActiveIndex}
               />
             </section>
+            
             <MediaDialogDetails
+              closeControl={
+                <DialogClose
+                  aria-label="Close"
+                  className="absolute end-4 top-4 z-20"
+                  render={<Button size="icon" variant="ghost" />}
+                >
+                  <XIcon />
+                </DialogClose>
+              }
               item={activeItem}
               position={activeIndex + 1}
               total={items.length}
             />
           </div>
-          <DialogClose
-            aria-label="Close"
-            className="absolute end-4 top-[max(1rem,env(safe-area-inset-top))] z-20"
-            render={<Button size="icon" variant="ghost" />}
-          >
-            <XIcon />
-          </DialogClose>
         </DialogPrimitive.Popup>
       </DialogViewport>
     </>
@@ -66,13 +74,11 @@ function FixedMediaDialogContent({
 }
 
 export function MediaCardDialog({
-  debug = false,
   items,
   onOpenChange,
   open,
   selectedIndex,
 }: {
-  debug?: boolean;
   items: readonly MediaCardItem[];
   onOpenChange: (open: boolean) => void;
   open: boolean;
@@ -83,9 +89,9 @@ export function MediaCardDialog({
       <DialogPortal>
         {open ? (
           <FixedMediaDialogContent
-            debug={debug}
             items={items}
             key={items[selectedIndex]?.id}
+            onOpenChange={onOpenChange}
             selectedIndex={selectedIndex}
           />
         ) : null}

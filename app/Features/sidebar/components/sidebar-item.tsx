@@ -2,6 +2,7 @@
 
 import type React from "react";
 import { cva } from "class-variance-authority";
+import { motion } from "motion/react";
 import {
   BookOpenIcon,
   BookmarkSimpleIcon,
@@ -119,22 +120,28 @@ export function SidebarItem({
       tooltip={label}
       {...props}
     >
-      <Icon
-        className={cn(
-          "sidebar-squircle",
-          "p-[4.5px]",
-        )}
-        icon={glyph}
-        label={isCollapsed ? label : undefined}
-        size="lg"
-        style={
-          {
-            "--sidebar-squircle-radius": "50px",
-          } as React.CSSProperties
-        }
-        variant={resolvedIconVariant}
-      />
-      {!isCollapsed ? <span className="truncate">{label}</span> : null}
+      <motion.div
+        className="flex w-full min-w-0 items-center gap-2"
+        whileTap={{ scale: 0.98 }}
+        transition={{ type: "spring", duration: 0.3, bounce: 0 }}
+      >
+        <Icon
+          className={cn(
+            "sidebar-squircle",
+            "p-[4.5px]",
+          )}
+          icon={glyph}
+          label={isCollapsed ? label : undefined}
+          size="lg"
+          style={
+            {
+              "--sidebar-squircle-radius": "50px",
+            } as React.CSSProperties
+          }
+          variant={resolvedIconVariant}
+        />
+        {!isCollapsed ? <span className="truncate">{label}</span> : null}
+      </motion.div>
     </SidebarMenuButton>
   );
 }

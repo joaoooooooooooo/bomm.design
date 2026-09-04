@@ -1,12 +1,12 @@
 "use client";
 
-import type * as React from "react";
+import { useState, type ComponentProps } from "react";
 import { ArrowUpRightIcon } from "@phosphor-icons/react/ssr";
 import { ArrowLink } from "./arrow-link";
 import { AvatarBadge } from "./avatar-badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { MediaPreview } from "./media-preview";
+import { MediaPreview, type MediaDimensions } from "./media-preview";
 
 export type MediaCardVariant = "default" | "hover" | "expanded";
 
@@ -30,35 +30,55 @@ export type MediaCardItem = {
   title: string;
 };
 
-export interface MediaCardProps extends React.ComponentProps<"article"> {
+export interface MediaCardProps extends ComponentProps<"article"> {
+  autoPlay?: boolean;
   contentClassName?: string;
-  debug?: boolean;
   item: MediaCardItem;
+  onMediaDimensions?: (dimensions: MediaDimensions) => void;
+  resolvedMediaDimensions?: MediaDimensions;
   variant?: MediaCardVariant;
 }
 
 /** A media-first card with overlay, hover, and expanded presentation variants. */
 export function MediaCard({
+  autoPlay,
   className,
   contentClassName,
-  debug = false,
   item,
+  onMediaDimensions,
+  resolvedMediaDimensions,
   variant = "default",
   ...props
 }: MediaCardProps): React.ReactElement {
   const isExpanded = variant === "expanded";
+  const shouldAutoPlay = autoPlay ?? variant === "default";
   const sourceLabel = item.source.label ?? "See post";
-  const mediaAspectRatio = `${item.media.width} / ${item.media.height}`;
+  const [loadedMediaDimensions, setLoadedMediaDimensions] = useState<MediaDimensions>();
+  const mediaDimensions =
+    resolvedMediaDimensions ??
+    loadedMediaDimensions ?? {
+      height: item.media.height,
+      width: item.media.width,
+    };
+  const mediaAspectRatio = `${mediaDimensions.width} / ${mediaDimensions.height}`;
+
+  const handleMediaDimensions = (dimensions: MediaDimensions) => {
+    if (dimensions.width <= 0 || dimensions.height <= 0) return;
+
+    setLoadedMediaDimensions((current) =>
+      current?.width === dimensions.width && current.height === dimensions.height
+        ? current
+        : dimensions,
+    );
+    onMediaDimensions?.(dimensions);
+  };
 
   return (
     <article
       className={cn(
-        "relative w-full items-center justify-center p-2",
-        isExpanded && "flex min-h-dvh items-center justify-center gap-10",
-        debug && "outline outline-1 outline-dashed outline-cyan-400",
+        "relative w-full",
         className,
       )}
-      data-debug-level={debug ? "media-card" : undefined}
       data-slot="media-card"
       data-variant={variant}
       {...props}
@@ -67,31 +87,17 @@ export function MediaCard({
         className={cn(
           "relative w-full overflow-visible",
           isExpanded && "h-fit w-fit max-w-[100dvh]",
-          debug && "outline outline-1 outline-dashed outline-fuchsia-400",
           contentClassName,
         )}
-        data-debug-level={debug ? "media-card-frame" : undefined}
         style={isExpanded ? undefined : { aspectRatio: mediaAspectRatio }}
       >
-        {debug ? (
-          <span className="pointer-events-none absolute left-1 top-1 z-30 rounded bg-fuchsia-400 px-1 py-0.5 font-mono text-[10px] leading-none text-black">
-            card frame
-          </span>
-        ) : null}
         <div
           className={cn(
             "relative h-full w-full overflow-hidden rounded-2xl",
-            debug && "outline outline-1 outline-dashed outline-lime-400",
           )}
-          data-debug-level={debug ? "media-card-shared-layout" : undefined}
         >
-          {debug ? (
-            <span className="pointer-events-none absolute left-1 top-5 z-30 rounded bg-lime-400 px-1 py-0.5 font-mono text-[10px] leading-none text-black">
-              shared layout
-            </span>
-          ) : null}
           <MediaPreview
-            autoPlay={variant === "default"}
+            autoPlay={shouldAutoPlay}
             className={cn(
               isExpanded
                 ? "block max-h-[90dvh]"
@@ -99,6 +105,7 @@ export function MediaCard({
             )}
             fit={isExpanded ? "contain" : "cover"}
             media={item.media}
+            onDimensionsChange={handleMediaDimensions}
             preload={isExpanded ? "auto" : "metadata"}
           />
           {!isExpanded ? (
@@ -120,11 +127,6 @@ export function MediaCard({
           ) : null}
         </div>
       </div>
-      {debug ? (
-        <span className="pointer-events-none absolute left-3 top-3 z-30 rounded bg-cyan-400 px-1 py-0.5 font-mono text-[10px] leading-none text-black">
-          media card
-        </span>
-      ) : null}
       {isExpanded ? (
         <div className="flex shrink-0 flex-col items-start justify-start gap-5 p-2 py-1 text-center">
           <AvatarBadge
@@ -147,6 +149,7 @@ export function MediaCard({
           </Button>
         </div>
       ) : null}
+   
     </article>
   );
 }

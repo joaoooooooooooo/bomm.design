@@ -195,13 +195,31 @@ export function Sidebar({
     return (
       <div
         className={cn(
-          "flex h-full w-(--sidebar-width) flex-col bg-sidebar text-sidebar-foreground",
-          className,
+          "peer hidden text-sidebar-foreground md:block",
         )}
+        data-side={side}
         data-slot="sidebar"
+        data-state="expanded"
+        data-variant={variant}
         {...props}
       >
-        {children}
+        <div className="relative w-(--sidebar-width)" data-slot="sidebar-gap" />
+        <div
+          className={cn(
+            "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) md:flex",
+            side === "left" ? "left-0 border-r" : "right-0 border-l",
+            className,
+          )}
+          data-slot="sidebar-container"
+        >
+          <div
+            className="flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow-sm/5"
+            data-sidebar="sidebar"
+            data-slot="sidebar-inner"
+          >
+            {children}
+          </div>
+        </div>
       </div>
     );
   }

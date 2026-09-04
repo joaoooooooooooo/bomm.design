@@ -12,17 +12,12 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  useSidebar,
 } from "@/components/ui/sidebar";
 import type { BomboColorVariant } from "@/app/Features/riveBombo/bombo-character";
 import type { SidebarItemIconVariant } from "@/app/Features/sidebar/components/sidebar-item";
 import { shellFooterItems } from "@/app/Features/sidebar/libs/shell-data";
-import { cn } from "@/lib/utils";
 
 function SidebarFooterLinks() {
-  const { state } = useSidebar();
-  const isCollapsed = state === "collapsed";
-
   return (
     <div className="border-t border-sidebar-border px-2 py-2">
       <div className="flex flex-col gap-1">
@@ -31,7 +26,7 @@ function SidebarFooterLinks() {
             key={item.title}
             iconName={item.iconName}
             label={item.title}
-            state={isCollapsed ? "collapsed-inactive" : "inactive"}
+            state="inactive"
           />
         ))}
       </div>
@@ -60,19 +55,13 @@ export function AppSidebar({
   activeTabId: PrototypeTabId;
   onSelectTab: (itemId: PrototypeTabId) => void;
 }) {
-  const { state } = useSidebar();
-  const isCollapsed = state === "collapsed";
-
   return (
-    <Sidebar className="*:data-[slot=sidebar-inner]:bg-card" collapsible="icon" variant="sidebar">
+    <Sidebar className="*:data-[slot=sidebar-inner]:bg-background" collapsible="none" variant="sidebar">
       <SidebarContent className="gap-3 py-2">
-        <div className={cn("pt-2", isCollapsed ? "px-2" : "px-3")}>
-          <div className={cn("flex", isCollapsed ? "justify-start" : "justify-start")}>
+        <div className="px-3 pt-2">
+          <div className="flex justify-start">
             <BomboCharacter
-              className={cn(
-                "aspect-square transition-[width,height] duration-200 ease-in-out",
-                isCollapsed ? "size-20px" : "size-[120px]",
-              )}
+              className="aspect-square size-[120px]"
               colorVariant={getActiveTabVariant(activeTabId)}
             />
           </div>

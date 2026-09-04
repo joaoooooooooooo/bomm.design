@@ -4,6 +4,7 @@ import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
 import type * as React from "react";
+import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -91,6 +92,12 @@ export function Button({
   return useRender({
     defaultTagName: "button",
     props: mergeProps<"button">(defaultProps, props),
-    render,
+    render:
+      render ?? (
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          transition={{ type: "spring", duration: 0.5, bounce: 0 }}
+        />
+      ),
   });
 }

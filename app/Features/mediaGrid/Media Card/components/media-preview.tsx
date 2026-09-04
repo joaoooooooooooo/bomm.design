@@ -4,15 +4,19 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { MediaCardItem } from "./media-card";
 
+export type MediaDimensions = { height: number; width: number };
+
 function VideoPreview({
   autoPlay,
   className,
   media,
+  onDimensionsChange,
   preload,
 }: {
   autoPlay: boolean;
   className: string;
   media: Extract<MediaCardItem["media"], { type: "video" }>;
+  onDimensionsChange?: (dimensions: MediaDimensions) => void;
   preload: "auto" | "metadata" | "none";
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -36,6 +40,12 @@ function VideoPreview({
         className={className}
         draggable={false}
         height={media.height}
+        onLoad={(event) =>
+          onDimensionsChange?.({
+            height: event.currentTarget.naturalHeight,
+            width: event.currentTarget.naturalWidth,
+          })
+        }
         src={media.poster}
         width={media.width}
       />
@@ -53,6 +63,12 @@ function VideoPreview({
       muted
       playsInline
       onError={() => setHasError(true)}
+      onLoadedMetadata={(event) =>
+        onDimensionsChange?.({
+          height: event.currentTarget.videoHeight,
+          width: event.currentTarget.videoWidth,
+        })
+      }
       preload={preload}
       src={media.src}
       width={media.width}
@@ -65,12 +81,14 @@ export function MediaPreview({
   className,
   fit = "cover",
   media,
+  onDimensionsChange,
   preload = "metadata",
 }: {
   autoPlay?: boolean;
   className?: string;
   fit?: "contain" | "cover";
   media: MediaCardItem["media"];
+  onDimensionsChange?: (dimensions: MediaDimensions) => void;
   preload?: "auto" | "metadata" | "none";
 }) {
   const objectFitClassName = fit === "contain" ? "object-contain" : "object-cover";
@@ -81,6 +99,7 @@ export function MediaPreview({
         autoPlay={autoPlay}
         className={cn("h-full w-full", objectFitClassName, className)}
         media={media}
+        onDimensionsChange={onDimensionsChange}
         preload={preload}
       />
     );
@@ -92,6 +111,12 @@ export function MediaPreview({
       className={cn("h-full w-full", objectFitClassName, className)}
       draggable={false}
       height={media.height}
+      onLoad={(event) =>
+        onDimensionsChange?.({
+          height: event.currentTarget.naturalHeight,
+          width: event.currentTarget.naturalWidth,
+        })
+      }
       src={media.src}
       width={media.width}
     />
