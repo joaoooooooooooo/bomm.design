@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 import type { GalleryPost, MediaDimensions } from "../types";
 export type { MediaDimensions } from "../types";
@@ -24,19 +25,24 @@ export function captureVideoHandoff(video: HTMLVideoElement): VideoHandoff | und
 
 function VideoPreview({
   autoPlay,
+  controls,
   className,
   media,
   onDimensionsChange,
+  onReady,
   preload,
   videoHandoff,
 }: {
   autoPlay: boolean;
+  controls: boolean;
   className: string;
   media: Extract<GalleryPost["media"], { type: "video" }>;
   onDimensionsChange?: (dimensions: MediaDimensions) => void;
+  onReady?: () => void;
   preload: "auto" | "metadata" | "none";
   videoHandoff?: VideoHandoff;
 }) {
+  const reduceMotion = useReducedMotion();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [hasError, setHasError] = useState(false);
   const [frameReady, setFrameReady] = useState(false);
@@ -83,7 +89,7 @@ function VideoPreview({
 
     let visible = false;
     const updatePlayback = () => {
-      if (autoPlay && visible && !document.hidden) {
+      if (autoPlay && !reduceMotion && visible && !document.hidden) {
         void video.play().catch(() => undefined);
       } else {
         video.pause();
@@ -102,7 +108,7 @@ function VideoPreview({
       document.removeEventListener("visibilitychange", updatePlayback);
       video.pause();
     };
-  }, [autoPlay]);
+  }, [autoPlay, reduceMotion]);
 
   if (hasError && !videoHandoff) {
     if (!media.poster) {
@@ -134,11 +140,16 @@ function VideoPreview({
       aria-label={media.alt}
       className={videoHandoff ? "h-full w-full [object-fit:inherit]" : className}
       height={media.height}
+      controls={controls}
       loop
       muted
       playsInline
       poster={videoHandoff ? undefined : media.poster}
-      onError={() => setHasError(true)}
+      onLoadedData={onReady}
+      onError={() => {
+        setHasError(true);
+        onReady?.();
+      }}
       onLoadedMetadata={(event) => {
         const element = event.currentTarget;
         onDimensionsChange?.({
@@ -180,18 +191,22 @@ function VideoPreview({
 
 export function MediaPreview({
   autoPlay = false,
+  controls = false,
   className,
   fit = "cover",
   media,
   onDimensionsChange,
+  onReady,
   preload = "metadata",
   videoHandoff,
 }: {
   autoPlay?: boolean;
+  controls?: boolean;
   className?: string;
   fit?: "contain" | "cover";
   media: GalleryPost["media"];
   onDimensionsChange?: (dimensions: MediaDimensions) => void;
+  onReady?: () => void;
   preload?: "auto" | "metadata" | "none";
   videoHandoff?: VideoHandoff;
 }) {
@@ -201,9 +216,11 @@ export function MediaPreview({
     return (
       <VideoPreview
         autoPlay={autoPlay}
+        controls={controls}
         className={cn("h-full w-full", objectFitClassName, className)}
         media={media}
         onDimensionsChange={onDimensionsChange}
+        onReady={onReady}
         preload={preload}
         videoHandoff={videoHandoff}
       />
@@ -216,12 +233,14 @@ export function MediaPreview({
       className={cn("h-full w-full", objectFitClassName, className)}
       draggable={false}
       height={media.height}
-      onLoad={(event) =>
+      onLoad={(event) => {
         onDimensionsChange?.({
           height: event.currentTarget.naturalHeight,
           width: event.currentTarget.naturalWidth,
-        })
-      }
+        });
+        onReady?.();
+      }}
+      onError={onReady}
       src={media.src}
       width={media.width}
     />

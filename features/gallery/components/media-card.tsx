@@ -7,7 +7,7 @@ import { ArrowLink } from "./arrow-link";
 import { AvatarBadge } from "./avatar-badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { MediaPreview, type MediaDimensions } from "./media-preview";
+import { MediaPreview } from "./media-preview";
 
 export type MediaCardVariant = "default" | "hover" | "expanded";
 
@@ -18,8 +18,7 @@ export interface MediaCardProps extends ComponentProps<"article"> {
   contentClassName?: string;
   item: GalleryPost;
   mediaLayoutId?: string;
-  onMediaDimensions?: (dimensions: MediaDimensions) => void;
-  resolvedMediaDimensions?: MediaDimensions;
+  isOpening?: boolean;
   variant?: MediaCardVariant;
 }
 
@@ -30,8 +29,7 @@ export function MediaCard({
   contentClassName,
   item,
   mediaLayoutId,
-  onMediaDimensions,
-  resolvedMediaDimensions,
+  isOpening = false,
   variant = "default",
   ...props
 }: MediaCardProps): React.ReactElement {
@@ -39,25 +37,10 @@ export function MediaCard({
   const reduceMotion = useReducedMotion();
   const shouldAutoPlay = autoPlay ?? variant === "default";
   const sourceLabel = item.source.label ?? "See post";
-  const [loadedMediaDimensions, setLoadedMediaDimensions] = useState<MediaDimensions>();
-  const mediaDimensions =
-    resolvedMediaDimensions ??
-    loadedMediaDimensions ?? {
-      height: item.media.height,
-      width: item.media.width,
-    };
-  const mediaAspectRatio = `${mediaDimensions.width} / ${mediaDimensions.height}`;
-
-  const handleMediaDimensions = (dimensions: MediaDimensions) => {
-    if (dimensions.width <= 0 || dimensions.height <= 0) return;
-
-    setLoadedMediaDimensions((current) =>
-      current?.width === dimensions.width && current.height === dimensions.height
-        ? current
-        : dimensions,
-    );
-    onMediaDimensions?.(dimensions);
-  };
+  const [readySource, setReadySource] = useState<string>();
+  const isReady = readySource === item.media.src;
+  // The grid and its placeholder use the same metadata, before bytes are loaded.
+  const mediaAspectRatio = `${item.media.width} / ${item.media.height}`;
 
   return (
     <article
@@ -65,6 +48,7 @@ export function MediaCard({
         "relative w-full",
         className,
       )}
+      aria-busy={!isReady}
       data-slot="media-card"
       data-post-id={item.id}
       data-variant={variant}
@@ -80,26 +64,30 @@ export function MediaCard({
       >
         <motion.div
           layoutId={reduceMotion ? undefined : mediaLayoutId}
+          layoutDependency={isOpening}
           layoutCrossfade={false}
           transition={{ layout: { type: "spring", bounce: 0, duration: 0.4 } }}
-          style={{ borderRadius: "var(--radius-2xl)" }}
           className={cn(
             "relative h-full w-full overflow-hidden rounded-2xl",
           )}
         >
+          {!isReady && (
+            <div aria-hidden="true" data-slot="media-placeholder" className="absolute inset-0 rounded-2xl bg-muted" />
+          )}
           <MediaPreview
             autoPlay={shouldAutoPlay}
             className={cn(
+              !isReady && "invisible",
               isExpanded
                 ? "block max-h-[90dvh]"
                 : "absolute inset-0",
             )}
             fit={isExpanded ? "contain" : "cover"}
             media={item.media}
-            onDimensionsChange={handleMediaDimensions}
+            onReady={() => setReadySource(item.media.src)}
             preload={isExpanded ? "auto" : "metadata"}
           />
-          {!isExpanded ? (
+          {!isExpanded && isReady ? (
             <div className="absolute inset-x-2 bottom-2 z-10 flex items-center justify-between">
               <AvatarBadge
                 avatarAlt={item.author.avatar?.alt ?? item.author.handle}

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useReducedMotion } from "motion/react";
 import {
   Alignment,
   Fit,
@@ -28,6 +29,7 @@ const MAX_POSITION = 500;
 const COLOR_STEPS = [50, 200, 300, 400, 500, 600, 700, 800] as const;
 const X_MAX_PERCENT = 100;
 const X_MIN_PERCENT = 40;
+const CHARACTER_LAYOUT = new Layout({ fit: Fit.Contain, alignment: Alignment.Center });
 const STATE_MACHINE = "BomboStateMachine";
 const VIEW_MODEL = "ViewModel1";
 
@@ -183,16 +185,14 @@ export function BomboCharacter({
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [visible, setVisible] = React.useState(false);
   const [pageVisible, setPageVisible] = React.useState(true);
-  const active = !paused && visible && pageVisible;
+  const reduceMotion = useReducedMotion();
+  const active = !reduceMotion && !paused && visible && pageVisible;
   const { rive, RiveComponent } = useRive({
     src: "/braza_design.riv",
     stateMachine: STATE_MACHINE,
     autoplay: false,
     autoBind: true,
-    layout: new Layout({
-      fit: Fit.Contain,
-      alignment: Alignment.Center,
-    }),
+    layout: CHARACTER_LAYOUT,
   });
   const viewModel = useViewModel(rive, { name: VIEW_MODEL });
   const viewModelInstance = useViewModelInstance(viewModel, { rive });
@@ -234,8 +234,10 @@ export function BomboCharacter({
     } else {
       rive.pause();
       rive.stopRendering();
+      // Render a still pose without starting the state-machine animation.
+      if (reduceMotion && visible && pageVisible) rive.drawFrame();
     }
-  }, [active, rive]);
+  }, [active, rive, reduceMotion, visible, pageVisible]);
 
   const writeValues = React.useEffectEvent((x: number, y: number) => {
     const lastPosition = lastPositionRef.current;
@@ -309,7 +311,6 @@ export function BomboCharacter({
     updateFromViewport(window.innerWidth / 2, window.innerHeight / 2);
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("resize", updateSidebarRect);
-    window.addEventListener("scroll", updateSidebarRect, true);
 
     const resizeObserver = new ResizeObserver(updateSidebarRect);
     if (sidebar) {
@@ -319,7 +320,6 @@ export function BomboCharacter({
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("resize", updateSidebarRect);
-      window.removeEventListener("scroll", updateSidebarRect, true);
       resizeObserver.disconnect();
 
       if (animationFrameRef.current !== null) {

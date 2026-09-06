@@ -4,7 +4,7 @@ import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
 import type * as React from "react";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -65,6 +65,7 @@ export function Button({
   disabled: disabledProp,
   ...props
 }: ButtonProps): React.ReactElement {
+  const reduceMotion = useReducedMotion();
   const isDisabled: boolean = Boolean(loading || disabledProp);
   const typeValue: React.ButtonHTMLAttributes<HTMLButtonElement>["type"] =
     render ? undefined : "button";
@@ -95,7 +96,7 @@ export function Button({
     render:
       render ?? (
         <motion.button
-          whileTap={{ scale: 0.95 }}
+          whileTap={reduceMotion ? undefined : { scale: 0.95 }}
           transition={{ type: "spring", duration: 0.5, bounce: 0 }}
         />
       ),

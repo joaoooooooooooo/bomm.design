@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import {
   animate,
   AnimatePresence,
@@ -45,6 +45,17 @@ function MediaDialogContent({
   const carouselTranslate = useTransform(() => `${x.get()}px 0px`);
   const detailsTranslate = useTransform(() => `${-x.get() * detailsDragRatio.get()}px 0px`);
   const detailsRef = useRef<HTMLDivElement>(null);
+  const detailsWidthRef = useRef(0);
+  useLayoutEffect(() => {
+    const details = detailsRef.current;
+    if (!details) return;
+    detailsWidthRef.current = details.offsetWidth;
+    const observer = new ResizeObserver(([entry]) => {
+      detailsWidthRef.current = entry.borderBoxSize[0]?.inlineSize ?? entry.contentRect.width;
+    });
+    observer.observe(details);
+    return () => observer.disconnect();
+  }, []);
   const isClosing = useRef(false);
   const gesture = useRef({ side: 1, origin: 0, axis: "" });
   const transition = { duration: reduceMotion ? 0 : 0.25 };
@@ -72,7 +83,7 @@ function MediaDialogContent({
               gesture.current.side = target.closest("[data-dismiss-details]") ? -1 : 1;
               if (event.button !== 0) gesture.current.side = 0;
               if (target.closest(
-                "button, a, input, textarea, select, [contenteditable=true], [role=slider]",
+                "button, a, input, textarea, select, video[controls], [contenteditable=true], [role=slider]",
               )) gesture.current.side = 0;
             }}
             onPanStart={() => {
@@ -92,7 +103,7 @@ function MediaDialogContent({
                 const next = current.origin + info.offset.x * current.side;
                 // Both panels move outward for negative x. Resist inward movement.
                 x.set(next <= 0 ? next : 32 * (1 - Math.exp(-next / 160)));
-                const detailsWidth = detailsRef.current?.offsetWidth;
+                const detailsWidth = detailsWidthRef.current;
                 if (detailsWidth && -x.get() * detailsDragRatio.get() >= detailsWidth * 0.1) {
                   isClosing.current = true;
                   onClose();
@@ -101,10 +112,14 @@ function MediaDialogContent({
             }}
             onPanEnd={() => {
               if (!gesture.current.side || isClosing.current) return;
+              if (reduceMotion) {
+                x.jump(0);
+                return;
+              }
               void animate(x, 0, {
                 type: "spring",
                 bounce: 0,
-                visualDuration: reduceMotion ? 0 : 0.25,
+                visualDuration: 0.25,
               });
             }}
           >

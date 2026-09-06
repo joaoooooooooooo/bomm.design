@@ -3,6 +3,7 @@
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { AlertCircle, Inbox } from "lucide-react";
 import {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -22,8 +23,8 @@ export interface MasonryGridProps<T> {
   loading?: boolean;
   error?: ReactNode;
   onRetry?: () => void;
-  estimateSize?: (item: T, index: number, columnWidth: number) => number;
-  renderLoadingItem?: (index: number) => ReactNode;
+  /** Exact card height from media metadata; omitted for DOM-measured content. */
+  getItemSize?: (item: T, index: number, columnWidth: number) => number;
   emptyState?: ReactNode;
   endState?: ReactNode;
   minColumnWidth?: number;
@@ -75,20 +76,6 @@ function useMasonryMetrics({
   return metrics;
 }
 
-function DefaultLoadingItem({ index }: { index: number }) {
-  return (
-    <div
-      aria-hidden="true"
-      className="rounded-2xl border border-border bg-card p-3"
-      style={{ minHeight: 144 + (index % 3) * 36 }}
-    >
-      <div className="h-3 w-2/3 rounded-full bg-muted" />
-      <div className="mt-3 h-2 w-full rounded-full bg-muted" />
-      <div className="mt-2 h-2 w-4/5 rounded-full bg-muted" />
-    </div>
-  );
-}
-
 function DefaultEmptyState() {
   return (
     <div className="flex h-full min-h-64 flex-col items-center justify-center px-6 text-center">
@@ -110,8 +97,7 @@ export function MasonryGrid<T>({
   loading = false,
   error,
   onRetry,
-  estimateSize = () => 240,
-  renderLoadingItem = (index) => <DefaultLoadingItem index={index} />,
+  getItemSize,
   emptyState = <DefaultEmptyState />,
   endState,
   minColumnWidth = 208,
@@ -152,31 +138,56 @@ export function MasonryGrid<T>({
     };
 
     updateScrollMargin();
-    const observer = new ResizeObserver(updateScrollMargin);
-    observer.observe(content);
-    return () => observer.disconnect();
+    // Changes to spacer height do not move its origin. Observe the preceding
+    // content instead, so pagination does not force a synchronous layout read.
+    let frame: number | undefined;
+    const schedule = () => {
+      if (frame !== undefined) cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(updateScrollMargin);
+    };
+    const observer = new ResizeObserver(schedule);
+    let ancestor: Element | null = content;
+    while (ancestor && ancestor !== document.body) {
+      let sibling = ancestor.previousElementSibling;
+      while (sibling) {
+        observer.observe(sibling);
+        sibling = sibling.previousElementSibling;
+      }
+      ancestor = ancestor.parentElement;
+    }
+    window.addEventListener("resize", schedule);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", schedule);
+      if (frame !== undefined) cancelAnimationFrame(frame);
+    };
   }, []);
 
   const hasError = error !== undefined && error !== null;
-  const tailCount = hasError ? 1 : loading ? columns : 0;
+  const tailCount = hasError ? 1 : 0;
   const columnWidth =
     columns > 0 ? Math.max(0, (width - gap * (columns - 1)) / columns) : 0;
+  const getVirtualItemKey = useCallback((index: number) =>
+    index < items.length ? getItemKey(items[index], index) : `masonry-tail-${index - items.length}`,
+  [getItemKey, items]);
   const virtualizer = useWindowVirtualizer({
     count: items.length + tailCount,
-    getItemKey: (index) =>
-      index < items.length
-        ? getItemKey(items[index], index)
-        : `masonry-tail-${index - items.length}`,
+    getItemKey: getVirtualItemKey,
     estimateSize: (index) =>
       index < items.length
-        ? estimateSize(items[index], index, columnWidth)
-        : 144 + ((index - items.length) % 3) * 36,
+        ? getItemSize?.(items[index], index, columnWidth) ?? 240
+        : 144,
     gap,
     lanes: columns,
     overscan: overscan * columns,
     scrollMargin,
     useFlushSync: false,
   });
+
+  useLayoutEffect(() => {
+    // Metadata or column width changed: invalidate once, without measuring each card.
+    virtualizer.measure();
+  }, [virtualizer, getItemSize, columnWidth]);
 
   const virtualItems = virtualizer.getVirtualItems();
   const viewportEnd =
@@ -225,12 +236,11 @@ export function MasonryGrid<T>({
       >
         {virtualItems.map((virtualItem) => {
           const isTail = virtualItem.index >= items.length;
-          const tailIndex = virtualItem.index - items.length;
 
           return (
             <div
               key={virtualItem.key}
-              ref={virtualizer.measureElement}
+              ref={isTail || !getItemSize ? virtualizer.measureElement : undefined}
               data-index={virtualItem.index}
               className={cn(
                 "absolute left-0 top-0",
@@ -242,26 +252,22 @@ export function MasonryGrid<T>({
               }}
             >
               {isTail ? (
-                hasError ? (
-                  <div className="flex min-h-36 flex-col items-start justify-center rounded-2xl border border-destructive/20 bg-destructive/5 p-4">
-                    <div className="flex items-center gap-2 text-destructive">
-                      <AlertCircle className="size-4" aria-hidden="true" />
-                      <p className="text-sm font-medium">Couldn&apos;t load more</p>
-                    </div>
-                    <div className="mt-2 text-xs leading-5 text-muted-foreground">{error}</div>
-                    {onRetry ? (
-                      <button
-                        type="button"
-                        onClick={onRetry}
-                        className="mt-3 min-h-10 rounded-full border border-border bg-background px-4 text-xs font-medium text-foreground outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                      >
-                        Try again
-                      </button>
-                    ) : null}
+                <div className="flex min-h-36 flex-col items-start justify-center rounded-2xl border border-destructive/20 bg-destructive/5 p-4">
+                  <div className="flex items-center gap-2 text-destructive">
+                    <AlertCircle className="size-4" aria-hidden="true" />
+                    <p className="text-sm font-medium">Couldn&apos;t load more</p>
                   </div>
-                ) : (
-                  renderLoadingItem(tailIndex)
-                )
+                  <div className="mt-2 text-xs leading-5 text-muted-foreground">{error}</div>
+                  {onRetry ? (
+                    <button
+                      type="button"
+                      onClick={onRetry}
+                      className="mt-3 min-h-10 rounded-full border border-border bg-background px-4 text-xs font-medium text-foreground outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                      Try again
+                    </button>
+                  ) : null}
+                </div>
               ) : (
                 renderItem(items[virtualItem.index], virtualItem.index)
               )}
@@ -272,9 +278,11 @@ export function MasonryGrid<T>({
       {!hasMore && items.length > 0 && endState ? (
         <div className="py-4 text-center text-xs text-muted-foreground">{endState}</div>
       ) : null}
-      <span className="sr-only" aria-live="polite">
-        {loading ? "Loading more items" : null}
-      </span>
+      {(hasMore || loading) && (
+        <div role="status" className="flex h-12 items-center justify-center text-xs text-muted-foreground">
+          {loading ? "Loading more media..." : null}
+        </div>
+      )}
     </section>
   );
 }

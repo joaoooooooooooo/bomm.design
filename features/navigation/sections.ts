@@ -1,7 +1,7 @@
 import type {
-  SidebarItemIconName,
-  SidebarItemIconVariant,
-} from "@/features/navigation/components/sidebar-item";
+  TabItemIconName,
+  TabItemIconVariant,
+} from "@/components/ui/tab-items";
 
 import type { SectionId } from "@/features/gallery/types";
 
@@ -11,18 +11,18 @@ export function isSection(value: string): value is SectionId {
   return value === "design" || value === "websites" || value === "tools";
 }
 
-export const sectionDetails: Record<SectionId, { title: string; introduction: string }> = {
-  design: { title: "Design", introduction: "Curadoria humana e sem compromisso de bons designs do Brasil (e do mundo)" },
-  websites: { title: "Websites", introduction: "Sites do Brasil (e do mundo) para explorar e se inspirar" },
-  tools: { title: "Tools", introduction: "Ferramentas para criar, experimentar e tirar ideias do papel" },
+export const sectionDetails: Record<SectionId, { title: string; introduction: string; iconVariant: TabItemIconVariant }> = {
+  design: { title: "Design", introduction: "Curadoria humana e sem compromisso de bons designs do Brasil (e do mundo)", iconVariant: "blue" },
+  websites: { title: "Websites", introduction: "Sites do Brasil (e do mundo) para explorar e se inspirar", iconVariant: "orange" },
+  tools: { title: "Tools", introduction: "Ferramentas para criar, experimentar e tirar ideias do papel", iconVariant: "pink" },
 };
 
 export type ShellNavItem = {
   id: SectionId;
   title: string;
   href: string;
-  iconName: SidebarItemIconName;
-  iconVariant: SidebarItemIconVariant;
+  iconName: TabItemIconName;
+  iconVariant: TabItemIconVariant;
 };
 
 export type ShellNavGroup = {
@@ -39,21 +39,21 @@ export const shellNavGroups: ShellNavGroup[] = [
         title: "Design",
         href: "/design",
         iconName: "pen-nib",
-        iconVariant: "blue",
+        iconVariant: sectionDetails.design.iconVariant,
       },
       {
         id: "websites",
         title: "Websites",
         href: "/websites",
         iconName: "globe",
-        iconVariant: "orange",
+        iconVariant: sectionDetails.websites.iconVariant,
       },
       {
         id: "tools",
         title: "Tools",
         href: "/tools",
         iconName: "hammer",
-        iconVariant: "pink",
+        iconVariant: sectionDetails.tools.iconVariant,
       },
     ],
   },

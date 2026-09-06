@@ -5,7 +5,7 @@ import { useSelectedLayoutSegment } from "next/navigation";
 import { BomboCharacter } from "@/features/navigation/components/bombo-character";
 import { LatestChange } from "@/features/navigation/components/latest-change";
 import { NavGroup } from "@/features/navigation/components/nav-group";
-import { SidebarItem } from "@/features/navigation/components/sidebar-item";
+import { TabItem } from "@/components/ui/tab-items";
 import {
   shellNavGroups,
   defaultSection,
@@ -17,7 +17,7 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import type { BomboColorVariant } from "@/features/navigation/components/bombo-character";
-import type { SidebarItemIconVariant } from "@/features/navigation/components/sidebar-item";
+import type { TabItemIconVariant } from "@/components/ui/tab-items";
 import { shellFooterItems } from "@/features/navigation/sections";
 
 function SidebarFooterLinks() {
@@ -25,11 +25,11 @@ function SidebarFooterLinks() {
     <div className="border-t border-sidebar-border px-2 py-2">
       <div className="flex flex-col gap-1">
         {shellFooterItems.map((item) => (
-          <SidebarItem
+          <TabItem
             key={item.title}
             iconName={item.iconName}
             label={item.title}
-            state="inactive"
+            variant="inactive"
           />
         ))}
       </div>
@@ -42,7 +42,7 @@ function getActiveTabVariant(activeTabId: string): BomboColorVariant {
     .flatMap((group) => group.items)
     .find((item) => item.id === activeTabId);
 
-  const variant = activeItem?.iconVariant as SidebarItemIconVariant | undefined;
+  const variant = activeItem?.iconVariant as TabItemIconVariant | undefined;
 
   if (variant === "orange" || variant === "pink") {
     return variant;

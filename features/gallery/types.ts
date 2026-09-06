@@ -1,5 +1,6 @@
 export type SectionId = "design" | "websites" | "tools";
 
+/** Dimensions of the served asset, supplied by the CMS/API before media loads. */
 export type MediaDimensions = { width: number; height: number };
 
 export type GalleryMedia = MediaDimensions & {
