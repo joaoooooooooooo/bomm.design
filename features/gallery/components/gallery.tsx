@@ -1,24 +1,25 @@
 "use client";
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { LayoutGroup, motion, useReducedMotion } from "motion/react";
+import { LayoutGroup } from "motion/react";
 import {
   MediaCard,
 } from "@/features/gallery/components/media-card";
 import { MediaCardDialog } from "@/features/gallery/components/media-card-dialog";
-import { captureVideoHandoff, type VideoHandoff } from "@/features/gallery/components/media-preview";
+import { captureVideoHandoff, releaseVideoHandoff, type VideoHandoff } from "@/features/gallery/components/media-preview";
 import { MasonryGrid } from "@/features/gallery/components/masonry-grid";
 
-import type { GalleryPost, GalleryPage, SectionId } from "../types";
+import type { Category, GalleryPost, GalleryPage, SectionId } from "../types";
 import { useGalleryDialogActivity } from "../dialog-activity";
 
-export function Gallery({ section, category, initialPage }: {
+export function Gallery({ section, category, categories, initialPage }: {
   section: SectionId;
   category?: string;
+  categories: readonly Category[];
   initialPage: GalleryPage;
 }) {
   const onDialogActiveChange = useGalleryDialogActivity();
-  const reduceMotion = useReducedMotion();
+
   const layoutGroupId = useId();
   const [items, setItems] = useState(initialPage.items);
   const [nextCursor, setNextCursor] = useState(initialPage.nextCursor);
@@ -29,6 +30,10 @@ export function Gallery({ section, category, initialPage }: {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [videoHandoff, setVideoHandoff] = useState<VideoHandoff>();
   const hasMore = nextCursor !== null;
+
+  useEffect(() => () => {
+    if (videoHandoff) releaseVideoHandoff(videoHandoff);
+  }, [videoHandoff]);
 
   useEffect(() => () => {
     requestInFlight.current?.abort();
@@ -82,11 +87,9 @@ export function Gallery({ section, category, initialPage }: {
         onLoadMore={loadMore}
         renderItem={(item, index) => (
           <LayoutGroup id={layoutGroupId}>
-            <motion.div
+            <div
               className="relative"
               tabIndex={-1}
-              whileTap={reduceMotion ? undefined : { scale: 0.98 }}
-              transition={{ type: "spring", duration: 0.3, bounce: 0 }}
             >
               <MediaCard
                 autoPlay={selectedIndex === null}
@@ -107,12 +110,13 @@ export function Gallery({ section, category, initialPage }: {
                 }}
                 type="button"
               />
-            </motion.div>
+            </div>
           </LayoutGroup>
         )}
       />
       <LayoutGroup id={layoutGroupId}>
         <MediaCardDialog
+          categories={categories}
           items={items}
           videoHandoff={videoHandoff}
           onExitComplete={() => {

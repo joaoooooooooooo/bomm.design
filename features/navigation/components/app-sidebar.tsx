@@ -1,6 +1,7 @@
 "use client";
 
 import { memo } from "react";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { useSelectedLayoutSegment } from "next/navigation";
 import { BomboCharacter } from "@/features/navigation/components/bombo-character";
 import { LatestChange } from "@/features/navigation/components/latest-change";
@@ -78,6 +79,9 @@ export const AppSidebar = memo(function AppSidebar({ animationPaused }: { animat
       <SidebarFooter className="gap-0 p-0">
         <LatestChange />
         <SidebarFooterLinks />
+        <div className="px-3 pb-3 pt-2">
+          <ThemeToggle />
+        </div>
       </SidebarFooter>
     </Sidebar>
   );

@@ -34,6 +34,15 @@ const DRAG_INERTIA = {
 } as const;
 
 const IMAGE_DRAG = { x: 18, y: 12, elastic: 0.18 } as const;
+const NEIGHBOR_REST = { transform: "translateY(0px)" };
+const NEIGHBOR_OFFSET = {
+  above: { transform: "translateY(calc(var(--spacing) * -6))" },
+  below: { transform: "translateY(calc(var(--spacing) * 6))" },
+};
+
+function neighborSide(index: number, activeIndex: number) {
+  return index === activeIndex - 1 ? "above" : index === activeIndex + 1 ? "below" : undefined;
+}
 
 type MediaCarouselProps = {
   activeIndex: number;
@@ -59,6 +68,8 @@ function CarouselSlide({
   sharedItemId,
   onSharedAnimationComplete,
   isEntering,
+  entranceSide,
+  exitSide,
   videoHandoff,
 }: {
   index: number;
@@ -71,11 +82,13 @@ function CarouselSlide({
   sharedItemId?: string;
   onSharedAnimationComplete: () => void;
   isEntering: boolean;
+  entranceSide?: "above" | "below";
+  exitSide?: "above" | "below";
   videoHandoff?: VideoHandoff;
 }) {
   const isPresent = useIsPresent();
   const reduceMotion = useReducedMotion();
-  const [mediaRatio, setMediaRatio] = useState(item.media.width / item.media.height);
+  const [mediaRatio, setMediaRatio] = useState((videoHandoff?.width ?? item.media.width) / (videoHandoff?.height ?? item.media.height));
   const safePitch = Math.max(1, pitch);
   const centerOffset = -index * safePitch;
   const range = [
@@ -99,8 +112,18 @@ function CarouselSlide({
       style={{ height: slideHeight, scale: reduceMotion ? 1 : scale, top, "--media-ratio": mediaRatio } as MotionStyle}
     >
       <motion.div
+        className="h-[min(100cqh,calc(100cqw/var(--media-ratio)))] w-[min(100cqw,calc(100cqh*var(--media-ratio)))]"
+        initial={!reduceMotion && entranceSide ? NEIGHBOR_OFFSET[entranceSide] : false}
+        animate={NEIGHBOR_REST}
+        exit={!reduceMotion && exitSide ? {
+          ...NEIGHBOR_OFFSET[exitSide],
+          transition: { duration: 0.18, ease: "easeIn" },
+        } : { ...NEIGHBOR_REST, transition: { duration: 0 } }}
+        transition={{ duration: reduceMotion ? 0 : 0.32, ease: [0.25, 0.46, 0.45, 0.94] }}
+      >
+      <motion.div
         data-media-image
-        className="h-[min(100cqh,calc(100cqw/var(--media-ratio)))] w-[min(100cqw,calc(100cqh*var(--media-ratio)))] cursor-grab rounded-2xl active:cursor-grabbing"
+        className="h-full w-full cursor-grab rounded-2xl active:cursor-grabbing"
         drag={shouldPlay && !(reduceMotion && item.media.type === "video")}
         dragConstraints={{
           bottom: IMAGE_DRAG.y,
@@ -144,9 +167,10 @@ function CarouselSlide({
           onDimensionsChange={({ width, height }) => {
             if (width > 0 && height > 0) setMediaRatio(width / height);
           }}
-          preload="auto"
+          preload={shouldPlay ? "auto" : "metadata"}
         />
         </motion.div>
+      </motion.div>
       </motion.div>
     </motion.div>
   );
@@ -163,6 +187,7 @@ export function MediaCarousel({
   const isPresent = useIsPresent();
   const reduceMotion = useReducedMotion();
   const [isEntering, setIsEntering] = useState(true);
+  const [entranceIndex] = useState(activeIndex);
   const dragControls = useDragControls();
   const outsidePress = useRef<{ x: number; y: number } | null>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -214,12 +239,17 @@ export function MediaCarousel({
     return () => observer.disconnect();
   }, [y]);
 
+  const changeActiveIndex = (index: number) => {
+    setIsEntering(false);
+    onActiveIndexChange(index);
+  };
+
   const snapTo = (index: number) => {
     const nextIndex = clampIndex(index, items.length);
     isMomentumSnapRef.current = false;
     if (nextIndex !== activeIndex) {
       // The index effect owns navigation springs; never start a second one here.
-      onActiveIndexChange(nextIndex);
+      changeActiveIndex(nextIndex);
     } else if (reduceMotion) {
       y.jump(-nextIndex * pitch);
     } else {
@@ -332,7 +362,7 @@ export function MediaCarousel({
           if (reduceMotion) y.jump(-nextIndex * pitch);
           if (nextIndex !== activeIndex) {
             isMomentumSnapRef.current = true;
-            onActiveIndexChange(nextIndex);
+            changeActiveIndex(nextIndex);
           }
         }}
         onDragTransitionEnd={() => {
@@ -342,7 +372,7 @@ export function MediaCarousel({
           );
           if (settledIndex !== activeIndex) {
             isMomentumSnapRef.current = true;
-            onActiveIndexChange(settledIndex);
+            changeActiveIndex(settledIndex);
           }
         }}
         onKeyDown={(event) => {
@@ -374,6 +404,8 @@ export function MediaCarousel({
               sharedItemId={sharedItemId}
               videoHandoff={item.id === sharedItemId ? videoHandoff : undefined}
               isEntering={isEntering}
+              entranceSide={isEntering && activeIndex === entranceIndex ? neighborSide(index, entranceIndex) : undefined}
+              exitSide={neighborSide(index, activeIndex)}
               onSharedAnimationComplete={() => setIsEntering(false)}
               item={item}
               key={item.id}

@@ -20,7 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { DragHandle } from "@/components/ui/drag-handle";
 import { XIcon } from "lucide-react";
-import type { GalleryPost } from "../types";
+import type { Category, GalleryPost } from "../types";
 import { MediaCarousel } from "./media-carousel";
 import { MediaDialogDetails } from "./media-dialog-details";
 import type { VideoHandoff } from "./media-preview";
@@ -28,11 +28,13 @@ import type { VideoHandoff } from "./media-preview";
 const CAROUSEL_DETAILS_DRAG_RATIO = 0.2;
 
 function MediaDialogContent({
+  categories,
   items,
   onClose,
   selectedIndex,
   videoHandoff,
 }: {
+  categories: readonly Category[];
   items: readonly GalleryPost[];
   onClose: () => void;
   selectedIndex: number;
@@ -161,6 +163,7 @@ function MediaDialogContent({
                 orientation="vertical"
               />
               <MediaDialogDetails
+                categories={categories}
                 closeControl={
                   <DialogClose
                     aria-label="Close"
@@ -171,8 +174,6 @@ function MediaDialogContent({
                   </DialogClose>
                 }
                 item={activeItem}
-                position={activeIndex + 1}
-                total={items.length}
               />
             </motion.div>
           </motion.div>
@@ -183,6 +184,7 @@ function MediaDialogContent({
 }
 
 export function MediaCardDialog({
+  categories,
   items,
   onExitComplete,
   onOpenChange,
@@ -190,6 +192,7 @@ export function MediaCardDialog({
   selectedIndex,
   videoHandoff,
 }: {
+  categories: readonly Category[];
   items: readonly GalleryPost[];
   onExitComplete: () => void;
   onOpenChange: (open: boolean) => void;
@@ -215,6 +218,7 @@ export function MediaCardDialog({
         {open ? (
           <DialogPortal keepMounted key={items[selectedIndex]?.id}>
             <MediaDialogContent
+              categories={categories}
               items={items}
               onClose={() => actionsRef.current?.close()}
               selectedIndex={selectedIndex}

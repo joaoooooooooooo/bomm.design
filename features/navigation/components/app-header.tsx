@@ -1,4 +1,3 @@
-import { ThemeToggle } from "@/components/theme-toggle";
 import type { Category, SectionId } from "@/features/gallery/types";
 import { sectionDetails } from "../sections";
 import { CategoryNav } from "./category-nav";
@@ -15,7 +14,6 @@ export function AppHeader({ section, categories, activeCategory }: {
       </header>
       <div className="sticky top-0 z-20 mb-4 flex h-14 w-full shrink-0 items-center justify-between gap-4 border-b border-border bg-background px-4 md:px-6">
         <CategoryNav section={section} categories={categories} activeCategory={activeCategory} />
-        <div className="flex shrink-0 items-center gap-2"><ThemeToggle /></div>
       </div>
     </>
   );

@@ -6,6 +6,36 @@ import { cva, type VariantProps } from "class-variance-authority";
 import type React from "react";
 import { motion, useReducedMotion } from "motion/react";
 import {
+  SignpostIcon,
+  DiamondsFourIcon,
+  BoundingBoxIcon,
+  GraduationCapIcon,
+  ImageIcon,
+  TextAaIcon,
+  BookBookmarkIcon,
+  LightbulbFilamentIcon,
+  CodeIcon,
+  PencilCircleIcon,
+  LightningIcon,
+  BookOpenTextIcon,
+  UsersFourIcon,
+  UserIcon,
+  UsersThreeIcon,
+  GraphIcon,
+  ArticleIcon,
+  ShoppingBagIcon,
+  SparkleIcon,
+  PaletteIcon,
+  CirclesFourIcon,
+  CopyrightIcon,
+  PrinterIcon,
+  ScribbleLoopIcon,
+  LayoutIcon,
+  CubeIcon,
+  ChairIcon,
+  DeviceMobileSpeakerIcon,
+  SquareLogoIcon,
+  WaveSineIcon,
   BookOpenIcon,
   BookmarkSimpleIcon,
   BriefcaseIcon,
@@ -25,6 +55,36 @@ import { Icon, iconVariants, type IconProps } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 
 const tabIcons = {
+  "signpost": SignpostIcon,
+  "diamonds-four": DiamondsFourIcon,
+  "bounding-box": BoundingBoxIcon,
+  "graduation-cap": GraduationCapIcon,
+  "image": ImageIcon,
+  "text-aa": TextAaIcon,
+  "book-bookmark": BookBookmarkIcon,
+  "lightbulb-filament": LightbulbFilamentIcon,
+  "code": CodeIcon,
+  "pencil-circle": PencilCircleIcon,
+  "lightning": LightningIcon,
+  "book-open-text": BookOpenTextIcon,
+  "users-four": UsersFourIcon,
+  user: UserIcon,
+  "users-three": UsersThreeIcon,
+  graph: GraphIcon,
+  article: ArticleIcon,
+  "shopping-bag": ShoppingBagIcon,
+  sparkle: SparkleIcon,
+  palette: PaletteIcon,
+  "circles-four": CirclesFourIcon,
+  copyright: CopyrightIcon,
+  printer: PrinterIcon,
+  "scribble-loop": ScribbleLoopIcon,
+  layout: LayoutIcon,
+  cube: CubeIcon,
+  chair: ChairIcon,
+  "device-mobile-speaker": DeviceMobileSpeakerIcon,
+  "square-logo": SquareLogoIcon,
+  "wave-sine": WaveSineIcon,
   "book-open": BookOpenIcon,
   "bookmark-simple": BookmarkSimpleIcon,
   briefcase: BriefcaseIcon,
@@ -63,6 +123,7 @@ export const tabItemVariants = cva(
 
 export interface TabItemProps extends useRender.ComponentProps<"button"> {
   iconName?: TabItemIconName;
+  iconWeight?: IconProps["weight"];
   /** Active icon palette; inactive icons use the shared muted treatment. */
   iconVariant?: TabItemIconVariant;
   label: string;
@@ -74,6 +135,7 @@ export interface TabItemProps extends useRender.ComponentProps<"button"> {
 export function TabItem({
   className,
   iconName = "bookmark-simple",
+  iconWeight = "fill",
   iconVariant = "pink",
   label,
   variant = "active",
@@ -98,16 +160,14 @@ export function TabItem({
         transition={{ type: "spring", duration: 0.3, bounce: 0 }}
       >
         <span className="relative inline-flex shrink-0">
-          <motion.span
+          <span
             aria-hidden="true"
-            className={cn(iconVariants({ variant: iconVariant }), "sidebar-squircle pointer-events-none absolute inset-0 rounded-[var(--sidebar-squircle-radius)] p-0")}
-            initial={false}
-            animate={{ scale: isActive ? 1 : 0 }}
-            transition={{ type: "spring", duration: reduceMotion ? 0 : 0.3, bounce: 0 }}
+            className={cn(iconVariants({ variant: iconVariant }), "sidebar-squircle pointer-events-none absolute inset-0 rounded-[var(--sidebar-squircle-radius)] p-0 transition-none", !isActive && "invisible")}
           />
           <Icon
             className="sidebar-squircle rounded-[var(--sidebar-squircle-radius)] bg-transparent"
             icon={tabIcons[iconName]}
+            weight={iconWeight}
             size={iconSize}
             variant={isActive ? iconVariant : "inactive"}
           />

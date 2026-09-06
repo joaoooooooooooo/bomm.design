@@ -17,7 +17,7 @@ export default async function SectionPage({ params, searchParams }: PageProps<"/
     <>
       <AppHeader section={section} categories={categories} activeCategory={category} />
       <div className="flex flex-1 flex-col px-4 py-4 md:px-6 md:py-6" data-home-page>
-        <Gallery key={`${section}:${category ?? "all"}`} section={section} category={category} initialPage={initialPage} />
+        <Gallery key={`${section}:${category ?? "all"}`} section={section} category={category} categories={categories} initialPage={initialPage} />
       </div>
     </>
   );

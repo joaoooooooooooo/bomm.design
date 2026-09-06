@@ -246,10 +246,22 @@ const sectionSources: Record<SectionId, readonly number[]> = {
 
 const slugify = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
-const designCategories = ["Branding", "Motion", "Logos", "Illustration", "3d", "Print", "Product", "Objects"];
+const designCategories = ["Branding", "Motion", "Logos", "Illustration", "3d", "Print", "Product", "Objects", "Interface"];
 
-export const galleryCategories: Category[] = Object.entries(sectionSources).flatMap(([section, indices]) =>
-  (section === "design" ? designCategories : [...new Set(indices.map((index) => gallerySource[index].category))]).map((name, order) => ({
+const websiteCategories = ["Portfolio", "Agency", "SaaS", "Blog", "E-Commerce", "Artificial Intelligence", "Art and Design"];
+// Existing demo sources: Morpho, Aave, and Framer. Other categories start empty.
+const websitePostCategories = ["SaaS", "SaaS", "Art and Design"];
+
+const toolsCategories = [
+  "Web Design tools", "Mockups", "UI Components", "Design Tools", "Design Courses",
+  "Icons and Illustrations", "Fonts and typography", "Books", "Inspiration", "Dev Tools",
+  "Design System", "Productivity", "Motion", "Blogs", "Community",
+];
+// Match the existing sample sources; categories without samples remain available.
+const toolsPostCategories = ["Motion", "Design Tools", "Design Tools", "Motion", "Web Design tools", "Productivity", "Design Tools"];
+
+export const galleryCategories: Category[] = Object.keys(sectionSources).flatMap((section) =>
+  (section === "design" ? designCategories : section === "websites" ? websiteCategories : toolsCategories).map((name, order) => ({
     id: `${section}-${slugify(name)}`,
     name,
     slug: slugify(name),
@@ -268,7 +280,7 @@ export const galleryPosts: GalleryPost[] = Object.entries(sectionSources).flatMa
       slug: id,
       title: source.title,
       section: section as SectionId,
-      categoryIds: [`${section}-${slugify(section === "design" ? designCategories[index % designCategories.length] : source.category)}`],
+      categoryIds: [`${section}-${slugify(section === "design" ? designCategories[index % indices.length] : section === "websites" ? websitePostCategories[index % indices.length] : toolsPostCategories[index % indices.length])}`],
       author: { ...source.author, id: source.author.handle, name: source.author.handle },
       source: source.source,
       media: source.media,

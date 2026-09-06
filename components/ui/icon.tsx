@@ -4,7 +4,7 @@ import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
 import type React from "react";
-import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
+import type { Icon as PhosphorIcon, IconWeight } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 export const iconVariants = cva(
@@ -34,6 +34,7 @@ export const iconVariants = cva(
 
 export interface IconProps extends useRender.ComponentProps<"span"> {
   icon: PhosphorIcon;
+  weight?: IconWeight;
   label?: string;
   size?: VariantProps<typeof iconVariants>["size"];
   variant?: VariantProps<typeof iconVariants>["variant"];
@@ -42,6 +43,7 @@ export interface IconProps extends useRender.ComponentProps<"span"> {
 export function Icon({
   className,
   icon: Glyph,
+  weight = "fill",
   label,
   size,
   variant,
@@ -53,7 +55,7 @@ export function Icon({
       <Glyph
         aria-hidden={label ? undefined : true}
         role={label ? "img" : undefined}
-        weight="fill"
+        weight={weight}
       />
     ),
     "aria-label": label,
