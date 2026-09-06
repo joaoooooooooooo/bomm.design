@@ -2,7 +2,7 @@
 
 import type React from "react";
 import { cva } from "class-variance-authority";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import {
   BookOpenIcon,
   BookmarkSimpleIcon,
@@ -19,7 +19,7 @@ import {
   SquaresFourIcon,
   UsersIcon,
 } from "@phosphor-icons/react/ssr";
-import { Icon, type IconProps } from "@/components/ui/icon";
+import { Icon, iconVariants, type IconProps } from "@/components/ui/icon";
 import { SidebarMenuButton } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 
@@ -97,6 +97,7 @@ export function SidebarItem({
   style,
   ...props
 }: SidebarItemProps): React.ReactElement {
+  const reduceMotion = useReducedMotion();
   const isCollapsed = state === "collapsed" || state === "collapsed-inactive";
   const isInactive = state === "inactive" || state === "collapsed-inactive";
   const glyph = sidebarIcons[iconName];
@@ -125,21 +126,32 @@ export function SidebarItem({
         whileTap={{ scale: 0.98 }}
         transition={{ type: "spring", duration: 0.3, bounce: 0 }}
       >
-        <Icon
-          className={cn(
-            "sidebar-squircle",
-            "p-[4.5px]",
-          )}
-          icon={glyph}
-          label={isCollapsed ? label : undefined}
-          size="lg"
+        <span
+          className="relative inline-flex shrink-0"
           style={
             {
               "--sidebar-squircle-radius": "50px",
             } as React.CSSProperties
           }
-          variant={resolvedIconVariant}
-        />
+        >
+          <motion.span
+            aria-hidden="true"
+            className={cn(
+              iconVariants({ variant: resolvedIconVariant }),
+              "sidebar-squircle pointer-events-none absolute inset-0 p-0",
+            )}
+            initial={false}
+            animate={{ transform: isInactive ? "scale(0)" : "scale(1)" }}
+            transition={{ type: "spring", duration: reduceMotion ? 0 : 0.3, bounce: 0 }}
+          />
+          <Icon
+            className="bg-transparent p-[4.5px]"
+            icon={glyph}
+            label={isCollapsed ? label : undefined}
+            size="lg"
+            variant={resolvedIconVariant}
+          />
+        </span>
         {!isCollapsed ? <span className="truncate">{label}</span> : null}
       </motion.div>
     </SidebarMenuButton>

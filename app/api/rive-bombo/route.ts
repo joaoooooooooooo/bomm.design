@@ -4,9 +4,9 @@ import { join } from "node:path";
 export async function GET() {
   const filePath = join(
     process.cwd(),
-    "app",
-    "Features",
-    "riveBombo",
+    "features",
+    "navigation",
+    "assets",
     "bombo2.riv",
   );
 

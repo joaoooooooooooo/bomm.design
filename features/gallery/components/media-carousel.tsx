@@ -4,12 +4,16 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   animate,
   motion,
+  type MotionStyle,
   type MotionValue,
   useMotionValue,
+  useDragControls,
   useTransform,
+  useIsPresent,
+  useReducedMotion,
 } from "motion/react";
-import type { MediaCardItem } from "./media-card";
-import { MediaPreview } from "./media-preview";
+import type { GalleryPost } from "../types";
+import { MediaPreview, type VideoHandoff } from "./media-preview";
 
 const GAP = 16;
 const SLIDE_HEIGHT_RATIO = 0.68;
@@ -17,46 +21,27 @@ const MOMENTUM_PROJECTION = 0.35;
 const WHEEL_SNAP_THRESHOLD = 36;
 const WHEEL_SNAP_COOLDOWN = 180;
 const VIRTUAL_SLIDE_OVERSCAN = 2;
-const SNAP_TRANSITION = { type: "spring", bounce: 0, visualDuration: 0.24 } as const;
+const SNAP_TRANSITION = {
+  type: "spring",
+  bounce: 0,
+  visualDuration: 0.24,
+} as const;
 const DRAG_INERTIA = {
   bounceDamping: 28,
   bounceStiffness: 560,
   power: MOMENTUM_PROJECTION,
   timeConstant: 95,
 } as const;
-type ReleaseWaveConfig = {
-  bounce: number;
-  compression: number;
-  duration: number;
-  imageElastic: number;
-  imageX: number;
-  imageY: number;
-  noise: number;
-  radius: number;
-  stagger: number;
-};
 
-const DEFAULT_RELEASE_WAVE: ReleaseWaveConfig = {
-  bounce: 0.18,
-  compression: 0.028,
-  duration: 0.26,
-  imageElastic: 0.18,
-  imageX: 18,
-  imageY: 12,
-  noise: 0.008,
-  radius: 2,
-  stagger: 0.032,
-};
-
-type ReleaseWave = {
-  id: number;
-  originIndex: number;
-};
+const IMAGE_DRAG = { x: 18, y: 12, elastic: 0.18 } as const;
 
 type MediaCarouselProps = {
   activeIndex: number;
-  items: readonly MediaCardItem[];
+  items: readonly GalleryPost[];
   onActiveIndexChange: (index: number) => void;
+  onDismiss: () => void;
+  sharedItemId?: string;
+  videoHandoff?: VideoHandoff;
 };
 
 function clampIndex(index: number, itemCount: number) {
@@ -71,19 +56,24 @@ function CarouselSlide({
   trackY,
   top,
   shouldPlay,
-  releaseWave,
-  releaseWaveConfig,
+  sharedItemId,
+  onSharedAnimationComplete,
+  videoHandoff,
 }: {
   index: number;
-  item: MediaCardItem;
+  item: GalleryPost;
   pitch: number;
   slideHeight: number;
   shouldPlay: boolean;
   top: number;
   trackY: MotionValue<number>;
-  releaseWave: ReleaseWave | null;
-  releaseWaveConfig: ReleaseWaveConfig;
+  sharedItemId?: string;
+  onSharedAnimationComplete: () => void;
+  videoHandoff?: VideoHandoff;
 }) {
+  const isPresent = useIsPresent();
+  const reduceMotion = useReducedMotion();
+  const [mediaRatio, setMediaRatio] = useState(item.media.width / item.media.height);
   const safePitch = Math.max(1, pitch);
   const centerOffset = -index * safePitch;
   const range = [
@@ -92,38 +82,8 @@ function CarouselSlide({
     centerOffset + safePitch,
   ];
   const scale = useTransform(trackY, range, [0.86, 1, 0.86]);
-  const opacity = useTransform(
-    trackY,
-    range,
-    [0.36, 1, 0.36],
-  );
-  const releaseScale = useMotionValue(1);
   const imageX = useMotionValue(0);
   const imageY = useMotionValue(0);
-
-  useEffect(() => {
-    if (!releaseWave) return;
-
-    const distance = Math.abs(index - releaseWave.originIndex);
-    if (distance > releaseWaveConfig.radius) return;
-
-    const noise = ((index * 17 + releaseWave.id * 13) % 10) * releaseWaveConfig.noise / 10;
-    const delay = distance * releaseWaveConfig.stagger + noise;
-    let animation: ReturnType<typeof animate> | undefined;
-    const timer = window.setTimeout(() => {
-      releaseScale.jump(1 - releaseWaveConfig.compression / (distance + 1));
-      animation = animate(releaseScale, 1, {
-        bounce: releaseWaveConfig.bounce,
-        type: "spring",
-        visualDuration: releaseWaveConfig.duration,
-      });
-    }, delay * 1000);
-
-    return () => {
-      window.clearTimeout(timer);
-      animation?.stop();
-    };
-  }, [index, releaseScale, releaseWave, releaseWaveConfig]);
 
   useEffect(() => {
     if (shouldPlay) return;
@@ -133,34 +93,52 @@ function CarouselSlide({
 
   return (
     <motion.div
-      className="absolute left-4 right-4"
-      style={{ height: slideHeight, opacity, scale, top }}
+      className="absolute left-4 right-4 grid place-items-center [container-type:size]"
+      style={{ height: slideHeight, scale, top, "--media-ratio": mediaRatio } as MotionStyle}
     >
       <motion.div
-        className="h-full w-full"
+        data-media-image
+        className="h-[min(100cqh,calc(100cqw/var(--media-ratio)))] w-[min(100cqw,calc(100cqh*var(--media-ratio)))] cursor-grab rounded-2xl active:cursor-grabbing"
         drag={shouldPlay}
         dragConstraints={{
-          bottom: releaseWaveConfig.imageY,
-          left: -releaseWaveConfig.imageX,
-          right: releaseWaveConfig.imageX,
-          top: -releaseWaveConfig.imageY,
+          bottom: IMAGE_DRAG.y,
+          left: -IMAGE_DRAG.x,
+          right: IMAGE_DRAG.x,
+          top: -IMAGE_DRAG.y,
         }}
-        dragElastic={releaseWaveConfig.imageElastic}
+        dragElastic={IMAGE_DRAG.elastic}
         dragMomentum={false}
         dragPropagation
         onDragEnd={() => {
           void animate(imageX, 0, SNAP_TRANSITION);
           void animate(imageY, 0, SNAP_TRANSITION);
         }}
-        style={{ scale: releaseScale, x: imageX, y: imageY }}
+        style={{
+          x: imageX,
+          y: imageY,
+          "--media-ratio": mediaRatio,
+        } as MotionStyle}
       >
+        <motion.div
+          layoutId={isPresent && !reduceMotion && item.id === sharedItemId ? `media-${item.id}` : undefined}
+          layoutCrossfade={false}
+          className="relative h-full w-full overflow-hidden rounded-2xl"
+          style={{ borderRadius: "var(--radius-2xl)" }}
+          transition={{ layout: { type: "spring", bounce: 0, duration: 0.4 } }}
+          onLayoutAnimationComplete={onSharedAnimationComplete}
+        >
         <MediaPreview
           autoPlay={shouldPlay}
-          className="rounded-2xl"
+          className="h-full w-full rounded-2xl"
           fit="contain"
           media={item.media}
-          preload={shouldPlay ? "auto" : "none"}
+          videoHandoff={videoHandoff}
+          onDimensionsChange={({ width, height }) => {
+            if (width > 0 && height > 0) setMediaRatio(width / height);
+          }}
+          preload="auto"
         />
+        </motion.div>
       </motion.div>
     </motion.div>
   );
@@ -170,19 +148,24 @@ export function MediaCarousel({
   activeIndex,
   items,
   onActiveIndexChange,
+  onDismiss,
+  sharedItemId,
+  videoHandoff,
 }: MediaCarouselProps) {
+  const isPresent = useIsPresent();
+  const reduceMotion = useReducedMotion();
+  const [isEntering, setIsEntering] = useState(true);
+  const dragControls = useDragControls();
+  const outsidePress = useRef<{ x: number; y: number } | null>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const initialIndexRef = useRef(activeIndex);
   const hasInitiallyPositionedRef = useRef(false);
   const isMomentumSnapRef = useRef(false);
   const skipNextIndexSyncRef = useRef(false);
-  const releaseWaveIdRef = useRef(0);
   const wheelDeltaRef = useRef(0);
   const wheelLockedRef = useRef(false);
   const [viewportHeight, setViewportHeight] = useState(0);
   const [isReady, setIsReady] = useState(false);
-  const [releaseWave, setReleaseWave] = useState<ReleaseWave | null>(null);
-  const releaseWaveConfig = DEFAULT_RELEASE_WAVE;
   const y = useMotionValue(0);
   const slideHeight = viewportHeight * SLIDE_HEIGHT_RATIO;
   const pitch = slideHeight + GAP;
@@ -195,17 +178,11 @@ export function MediaCarousel({
   );
   const visibleItems = items.slice(firstVisibleIndex, lastVisibleIndex);
 
-  const triggerReleaseWave = (originIndex: number) => {
-    releaseWaveIdRef.current += 1;
-    setReleaseWave({ id: releaseWaveIdRef.current, originIndex });
-  };
-
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport) return;
 
-    const observer = new ResizeObserver(([entry]) => {
-      const nextHeight = entry.contentRect.height;
+    const updateHeight = (nextHeight: number) => {
       if (!hasInitiallyPositionedRef.current && nextHeight > 0) {
         const initialPitch = nextHeight * SLIDE_HEIGHT_RATIO + GAP;
         y.jump(-initialIndexRef.current * initialPitch);
@@ -216,6 +193,12 @@ export function MediaCarousel({
       setViewportHeight((current) =>
         Math.abs(current - nextHeight) < 1 ? current : nextHeight,
       );
+    };
+
+    // Position the selected slide before paint; observe subsequent resizes.
+    updateHeight(viewport.clientHeight);
+    const observer = new ResizeObserver(([entry]) => {
+      updateHeight(entry.contentRect.height);
     });
 
     observer.observe(viewport);
@@ -226,7 +209,6 @@ export function MediaCarousel({
     const nextIndex = clampIndex(index, items.length);
     void animate(y, -nextIndex * pitch, SNAP_TRANSITION);
     if (nextIndex !== activeIndex) {
-      triggerReleaseWave(nextIndex);
       onActiveIndexChange(nextIndex);
     }
   };
@@ -266,25 +248,51 @@ export function MediaCarousel({
   return (
     <div
       ref={viewportRef}
-      className="relative h-full min-h-0 overflow-hidden bg-transparent"
+      className={`relative h-full min-h-0 cursor-default bg-transparent ${isPresent && !reduceMotion && isEntering && sharedItemId ? "overflow-visible" : "overflow-hidden"}`}
+      onPointerDownCapture={(event) => {
+        outsidePress.current = null;
+        if (event.button !== 0) return;
+        if (pitch > 0) dragControls.start(event);
+        if (!(event.target as Element).closest("[data-media-image]")) {
+          outsidePress.current = { x: event.clientX, y: event.clientY };
+        }
+      }}
+      onPointerMoveCapture={(event) => {
+        const start = outsidePress.current;
+        if (start && Math.hypot(event.clientX - start.x, event.clientY - start.y) > 5) {
+          outsidePress.current = null;
+        }
+      }}
+      onPointerCancel={() => { outsidePress.current = null; }}
+      onClick={(event) => {
+        const start = outsidePress.current;
+        outsidePress.current = null;
+        if (
+          start &&
+          Math.hypot(event.clientX - start.x, event.clientY - start.y) <= 5 &&
+          !(event.target as Element).closest("[data-media-image]")
+        ) onDismiss();
+      }}
     >
-      
       <motion.div
         aria-label="Collection media. Drag vertically to browse items."
-        initial={{ x: "-100%", opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ type: "spring", duration: 0.4, bounce: 0 }}
         aria-roledescription="carousel"
         drag={pitch > 0 ? "y" : false}
+        dragControls={dragControls}
+        dragListener={false}
+        dragDirectionLock
+        dragPropagation
         dragConstraints={{ bottom: 0, top: -maxOffset }}
         dragElastic={0.08}
         dragMomentum
+        onDragStart={() => { outsidePress.current = null; }}
         dragTransition={{
           ...DRAG_INERTIA,
           modifyTarget: (target) =>
             -clampIndex(Math.round(-target / pitch), items.length) * pitch,
         }}
         onDragEnd={(_event, info) => {
+          if (Math.abs(info.offset.x) > Math.abs(info.offset.y)) return;
           const projectedOffset =
             y.get() + info.velocity.y * MOMENTUM_PROJECTION;
           const nextIndex = clampIndex(
@@ -292,7 +300,6 @@ export function MediaCarousel({
             items.length,
           );
 
-          triggerReleaseWave(nextIndex);
           if (nextIndex !== activeIndex) {
             isMomentumSnapRef.current = true;
             onActiveIndexChange(nextIndex);
@@ -318,29 +325,30 @@ export function MediaCarousel({
         onWheel={handleWheel}
         role="group"
         style={{
-          touchAction: "pan-x",
+          touchAction: "none",
           visibility: isReady ? "visible" : "hidden",
           y,
         }}
         tabIndex={0}
-        className="relative h-full w-full cursor-grab active:cursor-grabbing"
+        className="relative h-full w-full"
       >
-        {visibleItems.map((item, offset) => {
+        {isReady && visibleItems.map((item, offset) => {
           const index = firstVisibleIndex + offset;
 
           return (
-          <CarouselSlide
-            key={item.id}
-            index={index}
-            item={item}
-            pitch={pitch}
-            slideHeight={slideHeight}
-            shouldPlay={index === activeIndex}
-            top={inset + index * pitch}
-            trackY={y}
-            releaseWave={releaseWave}
-            releaseWaveConfig={releaseWaveConfig}
-          />
+            <CarouselSlide
+              index={index}
+              sharedItemId={sharedItemId}
+              videoHandoff={item.id === sharedItemId ? videoHandoff : undefined}
+              onSharedAnimationComplete={() => setIsEntering(false)}
+              item={item}
+              key={item.id}
+              pitch={pitch}
+              shouldPlay={index === activeIndex}
+              slideHeight={slideHeight}
+              top={inset + index * pitch}
+              trackY={y}
+            />
           );
         })}
       </motion.div>

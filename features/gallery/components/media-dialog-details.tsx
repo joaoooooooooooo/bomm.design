@@ -2,15 +2,14 @@ import { ArrowUpRightIcon } from "@phosphor-icons/react/ssr";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { AvatarBadge } from "./avatar-badge";
-import type { MediaCardItem } from "./media-card";
-import { AnimatePresence, motion } from "motion/react";
+import type { GalleryPost } from "../types";
 
 export function MediaDialogDetails({
   closeControl,
   item,
 }: {
   closeControl?: ReactNode;
-  item: MediaCardItem;
+  item: GalleryPost;
   position: number;
   total: number;
 }) {
@@ -33,6 +32,7 @@ export function MediaDialogDetails({
           <h2 className="max-w-xl text-balance text-3xl leading-tight tracking-tight md:text-5xl">
             {item.title}
           </h2>
+          {item.description && <p className="whitespace-pre-line text-muted-foreground">{item.description}</p>}
         </div>
         <Button
           className="w-fit"

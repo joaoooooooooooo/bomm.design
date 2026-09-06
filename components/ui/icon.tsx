@@ -25,6 +25,7 @@ export const iconVariants = cva(
         pink: "bg-pink-500/20 text-pink-500",
         orange: "bg-orange-500/20 text-orange-500",
         teal: "bg-teal-500/20 text-teal-500",
+        neutral: "bg-muted-foreground text-foreground",
         inactive: "bg-transparent text-muted-foreground opacity-25",
       },
     },

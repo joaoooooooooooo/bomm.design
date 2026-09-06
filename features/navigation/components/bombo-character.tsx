@@ -16,6 +16,7 @@ import {
 import { cn } from "@/lib/utils";
 
 type BomboCharacterProps = {
+  paused?: boolean;
   className?: string;
   colorVariant?: BomboColorVariant;
 };
@@ -175,13 +176,18 @@ function useBomboPalette(
 }
 
 export function BomboCharacter({
+  paused = false,
   className,
   colorVariant = "blue",
 }: BomboCharacterProps) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = React.useState(false);
+  const [pageVisible, setPageVisible] = React.useState(true);
+  const active = !paused && visible && pageVisible;
   const { rive, RiveComponent } = useRive({
     src: "/braza_design.riv",
     stateMachine: STATE_MACHINE,
-    autoplay: true,
+    autoplay: false,
     autoBind: true,
     layout: new Layout({
       fit: Fit.Contain,
@@ -204,6 +210,33 @@ export function BomboCharacter({
 
   useBomboPalette(colorVariant, viewModelInstance);
 
+  React.useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      setVisible(entry.isIntersecting);
+    });
+    const updateVisibility = () => setPageVisible(!document.hidden);
+    observer.observe(container);
+    updateVisibility();
+    document.addEventListener("visibilitychange", updateVisibility);
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", updateVisibility);
+    };
+  }, []);
+
+  React.useEffect(() => {
+    if (!rive) return;
+    if (active) {
+      rive.play();
+      rive.startRendering();
+    } else {
+      rive.pause();
+      rive.stopRendering();
+    }
+  }, [active, rive]);
+
   const writeValues = React.useEffectEvent((x: number, y: number) => {
     const lastPosition = lastPositionRef.current;
 
@@ -224,7 +257,7 @@ export function BomboCharacter({
   });
 
   React.useEffect(() => {
-    if (typeof window === "undefined") {
+    if (!active) {
       return;
     }
 
@@ -291,12 +324,13 @@ export function BomboCharacter({
 
       if (animationFrameRef.current !== null) {
         window.cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
     };
-  }, []);
+  }, [active]);
 
   React.useEffect(() => {
-    if (typeof window === "undefined") {
+    if (!active) {
       return;
     }
 
@@ -309,10 +343,11 @@ export function BomboCharacter({
     return () => {
       window.removeEventListener("click", handleClick);
     };
-  }, [triggerBlink]);
+  }, [active, triggerBlink]);
 
   return (
     <div
+      ref={containerRef}
       className={cn(
         "overflow-hidden rounded-2xl bg-muted/30",
         className,

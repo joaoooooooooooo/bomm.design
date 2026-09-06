@@ -277,6 +277,14 @@
     border-radius: 999px;
   }
 
+  html:has([data-home-page]) {
+    scrollbar-width: none;
+  }
+
+  html:has([data-home-page])::-webkit-scrollbar {
+    display: none;
+  }
+
   .sidebar-squircle {
     border-radius: var(--sidebar-squircle-radius, 1rem);
   }

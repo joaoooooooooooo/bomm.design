@@ -11,11 +11,11 @@ import {
 } from "react";
 import { cn } from "@/lib/utils";
 
-export type InfiniteMasonryKey = string | number | bigint;
+export type MasonryGridKey = string | number | bigint;
 
-export interface InfiniteMasonryProps<T> {
+export interface MasonryGridProps<T> {
   items: readonly T[];
-  getItemKey: (item: T, index: number) => InfiniteMasonryKey;
+  getItemKey: (item: T, index: number) => MasonryGridKey;
   renderItem: (item: T, index: number) => ReactNode;
   onLoadMore: () => void | Promise<void>;
   hasMore: boolean;
@@ -101,7 +101,7 @@ function DefaultEmptyState() {
   );
 }
 
-export function InfiniteMasonry<T>({
+export function MasonryGrid<T>({
   items,
   getItemKey,
   renderItem,
@@ -123,7 +123,7 @@ export function InfiniteMasonry<T>({
   className,
   contentClassName,
   itemClassName,
-}: InfiniteMasonryProps<T>) {
+}: MasonryGridProps<T>) {
   const contentRef = useRef<HTMLDivElement>(null);
   const loadMoreRef = useRef(onLoadMore);
   const loadPendingRef = useRef(false);
@@ -233,7 +233,7 @@ export function InfiniteMasonry<T>({
               ref={virtualizer.measureElement}
               data-index={virtualItem.index}
               className={cn(
-                "absolute left-0 top-0 will-change-transform",
+                "absolute left-0 top-0",
                 !isTail && itemClassName,
               )}
               style={{

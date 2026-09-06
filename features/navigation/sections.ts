@@ -1,12 +1,24 @@
 import type {
   SidebarItemIconName,
   SidebarItemIconVariant,
-} from "@/app/Features/sidebar/components/sidebar-item";
+} from "@/features/navigation/components/sidebar-item";
 
-export type PrototypeTabId = "design" | "websites" | "tools";
+import type { SectionId } from "@/features/gallery/types";
+
+export const defaultSection: SectionId = "design";
+
+export function isSection(value: string): value is SectionId {
+  return value === "design" || value === "websites" || value === "tools";
+}
+
+export const sectionDetails: Record<SectionId, { title: string; introduction: string }> = {
+  design: { title: "Design", introduction: "Curadoria humana e sem compromisso de bons designs do Brasil (e do mundo)" },
+  websites: { title: "Websites", introduction: "Sites do Brasil (e do mundo) para explorar e se inspirar" },
+  tools: { title: "Tools", introduction: "Ferramentas para criar, experimentar e tirar ideias do papel" },
+};
 
 export type ShellNavItem = {
-  id: PrototypeTabId;
+  id: SectionId;
   title: string;
   href: string;
   iconName: SidebarItemIconName;
@@ -20,26 +32,26 @@ export type ShellNavGroup = {
 
 export const shellNavGroups: ShellNavGroup[] = [
   {
-    label: "Prototype",
+    label: "Gallery",
     items: [
       {
         id: "design",
         title: "Design",
-        href: "#/design",
+        href: "/design",
         iconName: "pen-nib",
         iconVariant: "blue",
       },
       {
         id: "websites",
         title: "Websites",
-        href: "#/websites",
+        href: "/websites",
         iconName: "globe",
         iconVariant: "orange",
       },
       {
         id: "tools",
         title: "Tools",
-        href: "#/tools",
+        href: "/tools",
         iconName: "hammer",
         iconVariant: "pink",
       },

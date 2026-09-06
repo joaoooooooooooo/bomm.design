@@ -1,20 +1,15 @@
 "use client";
 
-import { SidebarItem } from "@/app/Features/sidebar/components/sidebar-item";
+import { SidebarItem } from "@/features/navigation/components/sidebar-item";
+import Link from "next/link";
+import { useSelectedLayoutSegment } from "next/navigation";
 import { useSidebar } from "@/components/ui/sidebar";
 import type {
-  PrototypeTabId,
   ShellNavGroup,
-} from "@/app/Features/sidebar/libs/shell-data";
+} from "@/features/navigation/sections";
 
-export function NavGroup({
-  activeItemId,
-  items,
-  onSelect,
-}: ShellNavGroup & {
-  activeItemId: PrototypeTabId;
-  onSelect: (itemId: PrototypeTabId) => void;
-}) {
+export function NavGroup({ items }: ShellNavGroup) {
+  const activeItemId = useSelectedLayoutSegment();
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
 
@@ -26,7 +21,8 @@ export function NavGroup({
           iconName={item.iconName}
           iconVariant={item.iconVariant}
           label={item.title}
-          onClick={() => onSelect(item.id)}
+          render={<Link href={item.href} />}
+          aria-current={item.id === activeItemId ? "page" : undefined}
           state={
             isCollapsed
               ? item.id === activeItemId
