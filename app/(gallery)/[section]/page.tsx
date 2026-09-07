@@ -1,12 +1,22 @@
 import { notFound } from "next/navigation";
 import { Gallery } from "@/features/gallery/components/gallery";
+import { LogosGrid } from "@/features/gallery/components/logos-grid";
+import { curatedLogos } from "@/features/gallery/logos-data";
 import { getCategories, getGalleryPosts } from "@/features/gallery/queries";
 import { AppHeader } from "@/features/navigation/components/app-header";
-import { isSection } from "@/features/navigation/sections";
+import { isCollection } from "@/features/navigation/sections";
 
-export default async function SectionPage({ params, searchParams }: PageProps<"/[section]">) {
+export default async function CollectionPage({ params, searchParams }: PageProps<"/[section]">) {
   const [{ section }, filters] = await Promise.all([params, searchParams]);
-  if (!isSection(section)) notFound();
+  if (!isCollection(section)) notFound();
+  if (section === "logos") return (
+    <>
+      <AppHeader section={section} categories={[]} />
+      <div className="flex flex-1 flex-col" data-home-page>
+        <LogosGrid items={curatedLogos} />
+      </div>
+    </>
+  );
   const category = typeof filters.category === "string" ? filters.category || undefined : undefined;
   const [categories, initialPage] = await Promise.all([
     getCategories(section),

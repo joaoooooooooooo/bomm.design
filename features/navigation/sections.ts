@@ -3,15 +3,16 @@ import type {
   TabItemIconVariant,
 } from "@/components/ui/tab-items";
 
-import type { SectionId } from "@/features/gallery/types";
+import type { CollectionId } from "@/features/gallery/types";
 
-export const defaultSection: SectionId = "design";
+export const defaultCollection: CollectionId = "design";
 
-export function isSection(value: string): value is SectionId {
-  return value === "design" || value === "websites" || value === "tools";
+export function isCollection(value: string): value is CollectionId {
+  return value === "design" || value === "websites" || value === "tools" || value === "logos";
 }
 
-export const sectionDetails: Record<SectionId, { title: string; introduction: string; iconVariant: TabItemIconVariant }> = {
+export const collectionDetails: Record<CollectionId, { title: string; introduction: string; iconVariant: TabItemIconVariant }> = {
+  logos: { title: "Logos", introduction: "Marcas que ficam na cabeça. Uma coleção de logos para explorar e se inspirar", iconVariant: "teal" },
   design: { title: "Design", introduction: "Curadoria humana e sem compromisso de bons designs do Brasil (e do mundo)", iconVariant: "blue" },
   websites: { title: "Websites", introduction: "Sites do Brasil (e do mundo) para explorar e se inspirar", iconVariant: "orange" },
   tools: { title: "Tools", introduction: "Ferramentas para criar, experimentar e tirar ideias do papel", iconVariant: "pink" },
@@ -61,16 +62,16 @@ const toolsCategoryIcons: Partial<Record<string, TabItemIconName>> = {
 };
 
 /** Shared presentation for category slugs supplied by the gallery data source. */
-export function getCategoryPresentation(section: SectionId, slug: string) {
+export function getCategoryPresentation(section: CollectionId, slug: string) {
   const icons = section === "design" ? designCategoryIcons : section === "websites" ? websiteCategoryIcons : toolsCategoryIcons;
   return {
     iconName: icons[slug] ?? "bookmark-simple",
-    iconVariant: sectionDetails[section].iconVariant,
+    iconVariant: collectionDetails[section].iconVariant,
     iconWeight: "regular" as const,
   };
 }
 export type ShellNavItem = {
-  id: SectionId;
+  id: CollectionId;
   title: string;
   href: string;
   iconName: TabItemIconName;
@@ -84,28 +85,35 @@ export type ShellNavGroup = {
 
 export const shellNavGroups: ShellNavGroup[] = [
   {
-    label: "Gallery",
+    label: "Collections",
     items: [
       {
         id: "design",
         title: "Design",
         href: "/design",
         iconName: "pen-nib",
-        iconVariant: sectionDetails.design.iconVariant,
+        iconVariant: collectionDetails.design.iconVariant,
       },
       {
         id: "websites",
         title: "Websites",
         href: "/websites",
         iconName: "globe",
-        iconVariant: sectionDetails.websites.iconVariant,
+        iconVariant: collectionDetails.websites.iconVariant,
       },
       {
         id: "tools",
         title: "Tools",
         href: "/tools",
         iconName: "hammer",
-        iconVariant: sectionDetails.tools.iconVariant,
+        iconVariant: collectionDetails.tools.iconVariant,
+      },
+      {
+        id: "logos",
+        title: "Logos",
+        href: "/logos",
+        iconName: "square-logo",
+        iconVariant: collectionDetails.logos.iconVariant,
       },
     ],
   },

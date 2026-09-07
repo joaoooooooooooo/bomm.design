@@ -1,4 +1,4 @@
-import type { Category, GalleryPost, SectionId } from "./types";
+import type { Category, GalleryPost, CollectionId } from "./types";
 
 const gallerySource = [
   {
@@ -238,7 +238,7 @@ const gallerySource = [
 ] as const;
 
 // Temporary demo groupings. Each section uses a different set of source media.
-const sectionSources: Record<SectionId, readonly number[]> = {
+const sectionSources: Record<Exclude<CollectionId, "logos">, readonly number[]> = {
   design: [0, 1, 2, 3, 4, 5, 7, 17],
   websites: [10, 12, 15],
   tools: [6, 8, 9, 11, 13, 14, 16],
@@ -265,7 +265,7 @@ export const galleryCategories: Category[] = Object.keys(sectionSources).flatMap
     id: `${section}-${slugify(name)}`,
     name,
     slug: slugify(name),
-    section: section as SectionId,
+    section: section as CollectionId,
     order,
   })),
 );
@@ -279,7 +279,7 @@ export const galleryPosts: GalleryPost[] = Object.entries(sectionSources).flatMa
       id,
       slug: id,
       title: source.title,
-      section: section as SectionId,
+      section: section as CollectionId,
       categoryIds: [`${section}-${slugify(section === "design" ? designCategories[index % indices.length] : section === "websites" ? websitePostCategories[index % indices.length] : toolsPostCategories[index % indices.length])}`],
       author: { ...source.author, id: source.author.handle, name: source.author.handle },
       source: source.source,

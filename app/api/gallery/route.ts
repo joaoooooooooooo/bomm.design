@@ -1,12 +1,12 @@
 import { getGalleryPosts, getCategories } from "@/features/gallery/queries";
-import { isSection } from "@/features/navigation/sections";
+import { isCollection } from "@/features/navigation/sections";
 export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   const section = params.get("section") ?? "";
   const category = params.get("category") || undefined;
   const cursor = params.get("cursor") || undefined;
   const limit = Number(params.get("limit") ?? 12);
-  if (!isSection(section) || !Number.isInteger(limit) || limit < 1 || limit > 48) {
+  if (!isCollection(section) || !Number.isInteger(limit) || limit < 1 || limit > 48) {
     return Response.json({ error: "Invalid gallery query" }, { status: 400 });
   }
   if (category && !(await getCategories(section)).some((item) => item.slug === category)) {

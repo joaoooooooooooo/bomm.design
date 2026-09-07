@@ -5,10 +5,10 @@ import { animate, motion, useMotionValue, useReducedMotion } from "motion/react"
 import { useCallback, useLayoutEffect, useRef, useState, type PointerEvent } from "react";
 import { TabItem } from "@/components/ui/tab-items";
 import { getCategoryPresentation } from "../sections";
-import type { Category, SectionId } from "@/features/gallery/types";
+import type { Category, CollectionId } from "@/features/gallery/types";
 
 export function CategoryNav({ section, categories, activeCategory }: {
-  section: SectionId;
+  section: CollectionId;
   categories: Category[];
   activeCategory?: string;
 }) {

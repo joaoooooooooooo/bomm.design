@@ -9,8 +9,8 @@ import { NavGroup } from "@/features/navigation/components/nav-group";
 import { TabItem } from "@/components/ui/tab-items";
 import {
   shellNavGroups,
-  defaultSection,
-  isSection,
+  defaultCollection,
+  isCollection,
 } from "@/features/navigation/sections";
 import {
   Sidebar,
@@ -31,6 +31,7 @@ function SidebarFooterLinks() {
             iconName={item.iconName}
             label={item.title}
             variant="inactive"
+            className="w-full"
           />
         ))}
       </div>
@@ -45,7 +46,7 @@ function getActiveTabVariant(activeTabId: string): BomboColorVariant {
 
   const variant = activeItem?.iconVariant as TabItemIconVariant | undefined;
 
-  if (variant === "orange" || variant === "pink") {
+  if (variant === "orange" || variant === "pink" || variant === "teal") {
     return variant;
   }
 
@@ -54,7 +55,7 @@ function getActiveTabVariant(activeTabId: string): BomboColorVariant {
 
 function SidebarCharacter({ paused }: { paused?: boolean }) {
   const segment = useSelectedLayoutSegment();
-  const activeSection = segment && isSection(segment) ? segment : defaultSection;
+  const activeSection = segment && isCollection(segment) ? segment : defaultCollection;
   return (
     <BomboCharacter paused={paused} className="aspect-square size-[120px]" colorVariant={getActiveTabVariant(activeSection)} />
   );

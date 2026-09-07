@@ -22,7 +22,7 @@ type BomboCharacterProps = {
   colorVariant?: BomboColorVariant;
 };
 
-export type BomboColorVariant = "blue" | "orange" | "pink";
+export type BomboColorVariant = "blue" | "orange" | "pink" | "teal";
 
 const MIN_DELTA = 3;
 const MAX_POSITION = 500;
@@ -37,6 +37,16 @@ const PALETTES: Record<
   BomboColorVariant,
   Record<(typeof COLOR_STEPS)[number], `#${string}`>
 > = {
+  teal: {
+    50: "#f0fdfa",
+    200: "#99f6e4",
+    300: "#5eead4",
+    400: "#2dd4bf",
+    500: "#14b8a6",
+    600: "#0d9488",
+    700: "#0f766e",
+    800: "#115e59",
+  },
   blue: {
     50: "#eff6ff",
     200: "#bfdbfe",

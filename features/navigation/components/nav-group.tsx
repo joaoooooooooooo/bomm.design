@@ -7,11 +7,11 @@ import type {
   ShellNavGroup,
 } from "@/features/navigation/sections";
 
-export function NavGroup({ items }: ShellNavGroup) {
+export function NavGroup({ items, label }: ShellNavGroup) {
   const activeItemId = useSelectedLayoutSegment();
 
   return (
-    <div className="space-y-1 px-2 py-1">
+    <nav aria-label={label} className="space-y-1 px-2 py-1">
       {items.map((item) => (
         <TabItem
           key={item.title}
@@ -21,9 +21,10 @@ export function NavGroup({ items }: ShellNavGroup) {
           render={<Link href={item.href} />}
           aria-current={item.id === activeItemId ? "page" : undefined}
           variant={item.id === activeItemId ? "active" : "inactive"}
+          className="w-full"
           data-sidebar="menu-button"
         />
       ))}
-    </div>
+    </nav>
   );
 }

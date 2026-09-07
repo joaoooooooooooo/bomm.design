@@ -9,11 +9,11 @@ import { MediaCardDialog } from "@/features/gallery/components/media-card-dialog
 import { captureVideoHandoff, releaseVideoHandoff, type VideoHandoff } from "@/features/gallery/components/media-preview";
 import { MasonryGrid } from "@/features/gallery/components/masonry-grid";
 
-import type { Category, GalleryPost, GalleryPage, SectionId } from "../types";
+import type { Category, GalleryPost, GalleryPage, CollectionId } from "../types";
 import { useGalleryDialogActivity } from "../dialog-activity";
 
 export function Gallery({ section, category, categories, initialPage }: {
-  section: SectionId;
+  section: CollectionId;
   category?: string;
   categories: readonly Category[];
   initialPage: GalleryPage;

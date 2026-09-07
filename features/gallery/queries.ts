@@ -1,10 +1,10 @@
 import "server-only";
 
 import { galleryPosts, galleryCategories } from "./mock-data";
-import type { GalleryPage, SectionId } from "./types";
+import type { GalleryPage, CollectionId } from "./types";
 
 // Replace these reads with CMS queries and map responses to the types in types.ts.
-export async function getCategories(section: SectionId) {
+export async function getCategories(section: CollectionId) {
   return galleryCategories.filter((category) => category.section === section);
 }
 
@@ -14,7 +14,7 @@ export async function getGalleryPosts({
   cursor,
   limit = 12,
 }: {
-  section: SectionId;
+  section: CollectionId;
   category?: string;
   cursor?: string;
   limit?: number;

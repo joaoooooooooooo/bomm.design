@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { defaultSection } from "@/features/navigation/sections";
+import { defaultCollection } from "@/features/navigation/sections";
 export default function Home() {
-  redirect(`/${defaultSection}`);
+  redirect(`/${defaultCollection}`);
 }

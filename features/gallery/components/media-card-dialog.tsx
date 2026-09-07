@@ -77,10 +77,10 @@ function MediaDialogContent({
 
   return (
     <>
-      <DialogBackdrop className="bg-primary-foreground data-ending-style:duration-180 motion-reduce:duration-0" />
+      <DialogBackdrop className="bg-background data-ending-style:duration-180 motion-reduce:duration-0" />
       <DialogViewport className="block p-0" render={<motion.div layoutRoot />}>
         <DialogPrimitive.Popup
-          className="relative h-dvh w-full overflow-hidden bg-primary-foreground md:h-full md:bg-transparent"
+          className="relative h-dvh w-full overflow-hidden bg-background md:h-full md:bg-transparent"
         >
           <motion.div
             className="grid h-full min-h-0 grid-rows-[minmax(0,3fr)_minmax(0,2fr)] touch-pan-y md:grid-cols-[minmax(0,0.7fr)_minmax(20rem,0.3fr)] md:grid-rows-1"
@@ -163,7 +163,7 @@ function MediaDialogContent({
                 transition: exitTransition,
               }}
               transition={transition}
-              className="relative z-20 flex h-full min-h-0 flex-col rounded-t-2xl border-t border-border bg-background pt-14 text-foreground after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-dvh after:bg-background md:z-auto md:overflow-hidden md:rounded-none md:border-l md:border-t-0 md:pt-10 md:after:hidden"
+              className="relative z-20 flex h-full min-h-0 flex-col rounded-t-2xl border-t border-border bg-card pt-14 text-foreground after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-dvh after:bg-card md:z-auto md:overflow-hidden md:rounded-none md:border-l md:border-t-0 md:pt-10 md:after:hidden"
             >
               <div data-mobile-dismiss-handle className="absolute inset-x-14 top-0 flex h-12 touch-none select-none items-center justify-center md:hidden">
                 <DragHandle orientation="horizontal" />

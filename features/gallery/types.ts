@@ -1,4 +1,4 @@
-export type SectionId = "design" | "websites" | "tools";
+export type CollectionId = "design" | "websites" | "tools" | "logos";
 
 /** Dimensions of the served asset, supplied by the CMS/API before media loads. */
 export type MediaDimensions = { width: number; height: number };
@@ -20,7 +20,7 @@ export type Category = {
   id: string;
   name: string;
   slug: string;
-  section: SectionId;
+  section: CollectionId;
   order: number;
 };
 
@@ -29,7 +29,7 @@ export type GalleryPost = {
   slug: string;
   title: string;
   description?: string;
-  section: SectionId;
+  section: CollectionId;
   categoryIds: string[];
   author: Author;
   media: GalleryMedia;
