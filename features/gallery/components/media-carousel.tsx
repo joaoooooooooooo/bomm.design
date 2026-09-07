@@ -184,7 +184,6 @@ export function MediaCarousel({
   sharedItemId,
   videoHandoff,
 }: MediaCarouselProps) {
-  const isPresent = useIsPresent();
   const reduceMotion = useReducedMotion();
   const [isEntering, setIsEntering] = useState(true);
   const [entranceIndex] = useState(activeIndex);
@@ -307,7 +306,7 @@ export function MediaCarousel({
   return (
     <div
       ref={viewportRef}
-      className={`relative h-full min-h-0 cursor-default bg-transparent ${isPresent && !reduceMotion && isEntering && sharedItemId ? "overflow-visible" : "overflow-hidden"}`}
+      className="relative h-full min-h-0 cursor-default overflow-visible bg-transparent"
       onPointerDownCapture={(event) => {
         outsidePress.current = null;
         if (event.button !== 0 || (event.target as Element).closest("video[controls], button, a, input")) return;
