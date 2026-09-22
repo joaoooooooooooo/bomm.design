@@ -45,7 +45,7 @@ The home page redirects to `/design`. Use the sidebar to switch between the Desi
 
 ## Sanity gallery content
 
-`features/gallery/queries.ts` reads published `galleryItem` documents from Sanity using the server-only client in `lib/sanity/client.ts`. Copy `.env.example` to `.env.local` and set `NEXT_PUBLIC_SANITY_PROJECT_ID=abg9wgq6` and `NEXT_PUBLIC_SANITY_DATASET=production`. No API token is required for this public dataset. Reads bypass the CDN and Next.js data cache so a page refresh picks up published changes.
+`features/gallery/queries.ts` reads published `galleryItem` documents from Sanity using the server-only client in `lib/sanity/client.ts`. The public project `abg9wgq6` and dataset `production` are the defaults, so local and hosted builds work without an environment file. To override them, set `NEXT_PUBLIC_SANITY_PROJECT_ID` and `NEXT_PUBLIC_SANITY_DATASET` in `.env.local` or your hosting environment. No API token is required for this public dataset. Reads bypass the CDN and Next.js data cache so a page refresh picks up published changes.
 
 Run `npm run dev` here and the standalone Studio in `../studio-bom.design`. Fill in the inline Author fields (profile picture, handle, profile URL) and publish a Gallery Item in Studio, then visit `/design`, `/websites`, or `/tools` according to its collection. Category links keep their existing query-string URLs. The experimental `/logos` route still uses its existing curated logo data.
 
