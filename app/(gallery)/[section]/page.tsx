@@ -18,11 +18,11 @@ export default async function CollectionPage({ params, searchParams }: PageProps
     </>
   );
   const category = typeof filters.category === "string" ? filters.category || undefined : undefined;
-  const [categories, initialPage] = await Promise.all([
-    getCategories(section),
-    getGalleryPosts({ section, category }),
-  ]);
+  const categories = await getCategories(section);
   if (category && !categories.some((item) => item.slug === category)) notFound();
+  // Optimistic tabs respond immediately; retain the current gallery until the
+  // destination metadata is ready instead of blanking the page on every click.
+  const initialPage = await getGalleryPosts({ section, category });
   return (
     <>
       <AppHeader section={section} categories={categories} activeCategory={category} />

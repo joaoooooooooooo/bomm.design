@@ -25,6 +25,7 @@ type BomboCharacterProps = {
 export type BomboColorVariant = "blue" | "orange" | "pink" | "teal";
 
 const MIN_DELTA = 3;
+const DEFAULT_HANDOFF_MS = 250;
 const MAX_POSITION = 500;
 const COLOR_STEPS = [50, 200, 300, 400, 500, 600, 700, 800] as const;
 const X_MAX_PERCENT = 100;
@@ -215,6 +216,7 @@ export function BomboCharacter({
   );
   const lastPositionRef = React.useRef({ x: -1, y: -1 });
   const sidebarRectRef = React.useRef<DOMRect | null>(null);
+  const fullSidebarRectRef = React.useRef<DOMRect | null>(null);
   const pendingPointerRef = React.useRef<{ x: number; y: number } | null>(null);
   const animationFrameRef = React.useRef<number | null>(null);
 
@@ -249,15 +251,16 @@ export function BomboCharacter({
     }
   }, [active, rive, reduceMotion, visible, pageVisible]);
 
-  const writeValues = React.useEffectEvent((x: number, y: number) => {
+  const writeValues = React.useEffectEvent((x: number, y: number, smooth = false) => {
     const lastPosition = lastPositionRef.current;
+    const threshold = smooth ? 0.01 : MIN_DELTA;
 
-    if (lastPosition.x < 0 || Math.abs(x - lastPosition.x) >= MIN_DELTA) {
+    if (lastPosition.x < 0 || Math.abs(x - lastPosition.x) >= threshold) {
       moveX.setValue(x);
       lastPosition.x = x;
     }
 
-    if (lastPosition.y < 0 || Math.abs(y - lastPosition.y) >= MIN_DELTA) {
+    if (lastPosition.y < 0 || Math.abs(y - lastPosition.y) >= threshold) {
       if (moveY.value !== null) {
         moveY.setValue(y);
       } else {
@@ -276,14 +279,40 @@ export function BomboCharacter({
     const sidebar = document.querySelector<HTMLElement>(
       '[data-slot="sidebar-container"]',
     );
+    const sidebarContent = sidebar?.querySelector<HTMLElement>('[data-slot="sidebar-content"]');
+    const navigationItems = sidebarContent?.querySelectorAll<HTMLElement>('[data-sidebar="menu-button"]');
+    const lastNavigationItem = navigationItems?.[navigationItems.length - 1];
     const updateSidebarRect = () => {
-      sidebarRectRef.current = sidebar?.getBoundingClientRect() ?? null;
+      const sidebarBounds = sidebar?.getBoundingClientRect();
+      fullSidebarRectRef.current = sidebarBounds ?? null;
+      const lastItemBounds = lastNavigationItem?.getBoundingClientRect();
+      // Keep the full sidebar width, but stop at the last main navigation item.
+      // Below the navigation, only X uses the sidebar's local coordinates.
+      const rect = sidebarBounds && lastItemBounds
+        ? new DOMRect(
+            sidebarBounds.left,
+            sidebarBounds.top,
+            sidebarBounds.width,
+            Math.max(0, Math.min(lastItemBounds.bottom, sidebarBounds.bottom) - sidebarBounds.top),
+          )
+        : null;
+      sidebarRectRef.current = rect;
     };
+
+    let previousArea: "viewport" | "sidebar-x" | "sidebar-xy" | null = null;
+    let handoffStart = 0;
+    let offsetX = 0;
+    let offsetY = 0;
+    let blending = false;
 
     const updateFromViewport = (clientX: number, clientY: number) => {
       const sidebarRect = sidebarRectRef.current;
       const isInsideSidebar =
         sidebarRect !== null && isInsideRect(clientX, clientY, sidebarRect);
+      const fullSidebarRect = fullSidebarRectRef.current;
+      const isInsideFullSidebar =
+        fullSidebarRect !== null && isInsideRect(clientX, clientY, fullSidebarRect);
+      const area = isInsideSidebar ? "sidebar-xy" : isInsideFullSidebar ? "sidebar-x" : "viewport";
 
       let nextX: number;
       let nextY: number;
@@ -292,12 +321,42 @@ export function BomboCharacter({
         const mappedPoint = mapPointWithinRect(clientX, clientY, sidebarRect);
         nextX = mappedPoint.x;
         nextY = mappedPoint.y;
+      } else if (isInsideFullSidebar && fullSidebarRect) {
+        nextX = Math.round(clamp01((clientX - fullSidebarRect.left) / Math.max(fullSidebarRect.width, 1)) * MAX_POSITION);
+        nextY = mapViewportY(clientY);
       } else {
         nextX = mapViewportX(clientX, false);
         nextY = mapViewportY(clientY);
       }
 
-      writeValues(nextX, nextY);
+      const now = performance.now();
+      if (previousArea !== null && previousArea !== area) {
+        // Decay the mapping discontinuity while continuing to follow the mouse.
+        // Reversing mid-handoff starts from the current rendered values.
+        offsetX = lastPositionRef.current.x - nextX;
+        offsetY = lastPositionRef.current.y - nextY;
+        handoffStart = now;
+        blending = true;
+      }
+      previousArea = area;
+      const wasBlending = blending;
+      if (blending) {
+        const progress = clamp01((now - handoffStart) / DEFAULT_HANDOFF_MS);
+        const eased = 1 - (1 - progress) ** 3; // Cubic ease-out.
+        nextX = Math.max(0, Math.min(MAX_POSITION, nextX + offsetX * (1 - eased)));
+        nextY = Math.max(0, Math.min(MAX_POSITION, nextY + offsetY * (1 - eased)));
+        blending = progress < 1;
+      }
+      writeValues(nextX, nextY, wasBlending);
+      return blending;
+    };
+
+    const tick = () => {
+      animationFrameRef.current = null;
+      const pointer = pendingPointerRef.current;
+      if (pointer && updateFromViewport(pointer.x, pointer.y)) {
+        animationFrameRef.current = window.requestAnimationFrame(tick);
+      }
     };
 
     const handleMouseMove = (event: MouseEvent) => {
@@ -307,29 +366,31 @@ export function BomboCharacter({
         return;
       }
 
-      animationFrameRef.current = window.requestAnimationFrame(() => {
-        animationFrameRef.current = null;
-        const pointer = pendingPointerRef.current;
-
-        if (pointer) {
-          updateFromViewport(pointer.x, pointer.y);
-        }
-      });
+      animationFrameRef.current = window.requestAnimationFrame(tick);
     };
 
     updateSidebarRect();
-    updateFromViewport(window.innerWidth / 2, window.innerHeight / 2);
+    const initialPointer = pendingPointerRef.current;
+    updateFromViewport(initialPointer?.x ?? window.innerWidth / 2, initialPointer?.y ?? window.innerHeight / 2);
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("resize", updateSidebarRect);
+    sidebarContent?.addEventListener("scroll", updateSidebarRect, { passive: true });
 
     const resizeObserver = new ResizeObserver(updateSidebarRect);
     if (sidebar) {
       resizeObserver.observe(sidebar);
     }
+    if (sidebarContent) {
+      resizeObserver.observe(sidebarContent);
+      // Changes above the final item can move its bottom without resizing it.
+      for (const child of sidebarContent.children) resizeObserver.observe(child);
+    }
+    if (lastNavigationItem) resizeObserver.observe(lastNavigationItem);
 
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("resize", updateSidebarRect);
+      sidebarContent?.removeEventListener("scroll", updateSidebarRect);
       resizeObserver.disconnect();
 
       if (animationFrameRef.current !== null) {

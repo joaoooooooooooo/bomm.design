@@ -2,23 +2,33 @@
 
 import { TabItem } from "@/components/ui/tab-items";
 import Link from "next/link";
-import { useSelectedLayoutSegment } from "next/navigation";
+import { useRouter, useSelectedLayoutSegment } from "next/navigation";
+import { useOptimistic, useTransition } from "react";
 import type {
   ShellNavGroup,
 } from "@/features/navigation/sections";
 
 export function NavGroup({ items, label }: ShellNavGroup) {
-  const activeItemId = useSelectedLayoutSegment();
+  const routeItemId = useSelectedLayoutSegment();
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [activeItemId, setActiveItemId] = useOptimistic(routeItemId);
 
   return (
-    <nav aria-label={label} className="space-y-1 px-2 py-1">
+    <nav aria-label={label} data-navigation-pending={isPending} className="space-y-1 px-2 py-1">
       {items.map((item) => (
         <TabItem
           key={item.title}
           iconName={item.iconName}
           iconVariant={item.iconVariant}
           label={item.title}
-          render={<Link href={item.href} />}
+          render={<Link href={item.href} onNavigate={(event) => {
+            event.preventDefault();
+            startTransition(() => {
+              setActiveItemId(item.id);
+              router.push(item.href);
+            });
+          }} />}
           aria-current={item.id === activeItemId ? "page" : undefined}
           variant={item.id === activeItemId ? "active" : "inactive"}
           className="w-full"

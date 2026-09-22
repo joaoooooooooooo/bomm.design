@@ -8,6 +8,15 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
+# Product Context
+
+- Brasa is a browsable gallery personally curated by the project owner. Editorial selection and a clear human point of view are core to the product.
+- The three top-level collections are **Design**, **Websites**, and **Tools**. Do not introduce another top-level collection without an explicit request.
+- Collections contain categories such as Branding, Motion, and Logos. Categories are expected to evolve and should remain scoped to their collection.
+- Logos is currently an experimental category, not a top-level collection.
+- Use the domain terms **collection**, **category**, and **item** consistently in product discussions, content models, and new feature code. Existing technical names such as `section` or `post` may remain until a requested refactor makes renaming appropriate.
+- The catalog is curated rather than community-submitted or automatically aggregated. Do not add submission, voting, or automated-ingestion behavior unless explicitly requested.
+
 # Component Development Rules
 
 ## Source of truth

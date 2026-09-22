@@ -52,8 +52,8 @@ export function MediaDialogDetails({
             <p className="break-all text-foreground">{handle}</p>
           </div>
         </div>
-        <DialogPrimitive.Title className="w-full break-words text-2xl leading-8 font-normal tracking-tight">
-          {item.title}
+        <DialogPrimitive.Title className={item.title ? "w-full break-words text-2xl leading-8 font-normal tracking-tight" : "sr-only"}>
+          {item.title || item.media.alt}
         </DialogPrimitive.Title>
         {item.description && (
           <DialogPrimitive.Description className="whitespace-pre-line break-words text-muted-foreground">

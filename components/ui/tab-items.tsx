@@ -160,9 +160,12 @@ export function TabItem({
         transition={{ type: "spring", duration: 0.3, bounce: 0 }}
       >
         <span className="relative inline-flex shrink-0">
-          <span
+          <motion.span
             aria-hidden="true"
-            className={cn(iconVariants({ variant: iconVariant }), "sidebar-squircle pointer-events-none absolute inset-0 rounded-[var(--sidebar-squircle-radius)] p-0 transition-none", !isActive && "invisible")}
+            className={cn(iconVariants({ variant: iconVariant }), "sidebar-squircle pointer-events-none absolute inset-0 rounded-[var(--sidebar-squircle-radius)] p-0")}
+            initial={false}
+            animate={{ scale: isActive ? 1 : 0 }}
+            transition={{ type: "spring", duration: reduceMotion ? 0 : 0.3, bounce: 0 }}
           />
           <Icon
             className="sidebar-squircle rounded-[var(--sidebar-squircle-radius)] bg-transparent"

@@ -1,39 +1,47 @@
-import "server-only";
+﻿import "server-only";
 
-import { galleryPosts, galleryCategories } from "./mock-data";
+import { sanityClient } from "@/lib/sanity/client";
+import { categoriesForCollection } from "./categories";
+import { GALLERY_QUERY } from "./sanity-query";
+import { mapSanityGalleryItem, type SanityGalleryItem } from "./sanity-mapping";
 import type { GalleryPage, CollectionId } from "./types";
 
-// Replace these reads with CMS queries and map responses to the types in types.ts.
-export async function getCategories(section: CollectionId) {
-  return galleryCategories.filter((category) => category.section === section);
+async function fetchItems(params: {
+  collection: string | null; category: string | null; cursor: string | null; id: string | null;
+}) {
+  return sanityClient.fetch(
+    GALLERY_QUERY, params, { cache: "no-store" },
+  );
 }
 
-export async function getGalleryPosts({
-  section,
-  category,
-  cursor,
-  limit = 12,
-}: {
-  section: CollectionId;
-  category?: string;
-  cursor?: string;
-  limit?: number;
+function mapItem(item: SanityGalleryItem) {
+  const { projectId, dataset } = sanityClient.config();
+  return mapSanityGalleryItem(item, { projectId: projectId!, dataset: dataset! });
+}
+
+export async function getCategories(section: CollectionId) {
+  return categoriesForCollection(section);
+}
+
+export async function getGalleryPosts({ section, category, cursor, limit = 12 }: {
+  section: CollectionId; category?: string; cursor?: string; limit?: number;
 }): Promise<GalleryPage> {
-  const posts = galleryPosts.filter((post) =>
-    post.status === "published" && post.section === section &&
-    (!category || post.categoryIds.includes(`${section}-${category}`)),
-  );
-  const cursorIndex = cursor ? posts.findIndex((post) => post.id === cursor) : -1;
-  if (cursor && cursorIndex === -1) return { items: [], nextCursor: null };
-  const start = cursorIndex + 1;
+  if (section === "logos") return { items: [], nextCursor: null };
+  if (category && !categoriesForCollection(section).some((entry) => entry.slug === category)) {
+    return { items: [], nextCursor: null };
+  }
   const pageSize = Number.isFinite(limit) ? Math.max(1, Math.min(48, Math.floor(limit))) : 12;
-  const items = posts.slice(start, start + pageSize);
-  return {
-    items,
-    nextCursor: start + items.length < posts.length ? items.at(-1)!.id : null,
-  };
+  const result = await fetchItems({
+    collection: section, category: category ? `${section}/${category}` : null,
+    cursor: cursor ?? null, id: null,
+  });
+  if (!result.cursorExists) return { items: [], nextCursor: null };
+  const items = result.items.slice(0, pageSize).map(mapItem);
+  return { items, nextCursor: result.items.length > pageSize ? items.at(-1)!.id : null };
 }
 
 export async function getGalleryPost(slug: string) {
-  return galleryPosts.find((post) => post.slug === slug && post.status === "published") ?? null;
+  const result = await fetchItems({ collection: null, category: null, cursor: null, id: slug });
+  return result.items[0] ? mapItem(result.items[0]) : null;
 }
+

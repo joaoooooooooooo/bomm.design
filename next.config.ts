@@ -7,9 +7,16 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     optimizePackageImports: ["@phosphor-icons/react"],
+    // Reuse recently visited categories instead of requesting their page again.
+    staleTimes: { dynamic: 300 },
   },
   images: {
     remotePatterns: [
+      {
+        hostname: "cdn.sanity.io",
+        protocol: "https",
+        pathname: "/images/abg9wgq6/production/**",
+      },
       {
         hostname: "images.unsplash.com",
         protocol: "https",

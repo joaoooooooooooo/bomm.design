@@ -4,7 +4,6 @@ import { memo } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useSelectedLayoutSegment } from "next/navigation";
 import { BomboCharacter } from "@/features/navigation/components/bombo-character";
-import { LatestChange } from "@/features/navigation/components/latest-change";
 import { NavGroup } from "@/features/navigation/components/nav-group";
 import { TabItem } from "@/components/ui/tab-items";
 import {
@@ -78,7 +77,6 @@ export const AppSidebar = memo(function AppSidebar({ animationPaused }: { animat
         ))}
       </SidebarContent>
       <SidebarFooter className="gap-0 p-0">
-        <LatestChange />
         <SidebarFooterLinks />
         <div className="px-3 pb-3 pt-2">
           <ThemeToggle />

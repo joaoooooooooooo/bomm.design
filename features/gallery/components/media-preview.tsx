@@ -216,6 +216,11 @@ export function MediaPreview({
 
   return (
     <img
+      ref={(image) => {
+        // Cached images may already be complete when this preview mounts.
+        // Report readiness before paint instead of waiting for another load event.
+        if (image?.complete && image.naturalWidth > 0) onReady?.();
+      }}
       alt={media.alt}
       className={cn("h-full w-full", objectFitClassName, className)}
       draggable={false}

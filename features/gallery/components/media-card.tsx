@@ -115,9 +115,9 @@ export function MediaCard({
             username={item.author.handle}
             variant="secondary"
           />
-          <h3 className="max-w-[264px] text-left text-3xl text-white">
+          {item.title ? <h3 className="max-w-[264px] text-left text-3xl text-white">
             {item.title}
-          </h3>
+          </h3> : null}
           <Button
             className="h-fit w-fit"
             render={<a href={item.source.url} rel="noreferrer" target="_blank" />}

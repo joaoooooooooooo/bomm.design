@@ -14,6 +14,8 @@ export type Author = {
   handle: string;
   avatar?: { alt: string; src: string };
   website?: string;
+  platform?: string;
+  externalId?: string;
 };
 
 export type Category = {
@@ -33,7 +35,8 @@ export type GalleryPost = {
   categoryIds: string[];
   author: Author;
   media: GalleryMedia;
-  source: { label?: string; url: string };
+  source: { label?: string; url: string; platform?: string };
+  externalPostId?: string;
   status: "draft" | "published";
   publishedAt?: string;
 };

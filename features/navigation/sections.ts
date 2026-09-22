@@ -8,7 +8,8 @@ import type { CollectionId } from "@/features/gallery/types";
 export const defaultCollection: CollectionId = "design";
 
 export function isCollection(value: string): value is CollectionId {
-  return value === "design" || value === "websites" || value === "tools" || value === "logos";
+  // The experimental Logos page is reserved for a future release.
+  return value === "design" || value === "websites" || value === "tools";
 }
 
 export const collectionDetails: Record<CollectionId, { title: string; introduction: string; iconVariant: TabItemIconVariant }> = {
@@ -107,13 +108,6 @@ export const shellNavGroups: ShellNavGroup[] = [
         href: "/tools",
         iconName: "hammer",
         iconVariant: collectionDetails.tools.iconVariant,
-      },
-      {
-        id: "logos",
-        title: "Logos",
-        href: "/logos",
-        iconName: "square-logo",
-        iconVariant: collectionDetails.logos.iconVariant,
       },
     ],
   },

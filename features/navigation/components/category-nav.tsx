@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { animate, motion, useMotionValue, useReducedMotion } from "motion/react";
-import { useCallback, useLayoutEffect, useRef, useState, type PointerEvent } from "react";
+import { useCallback, useLayoutEffect, useOptimistic, useRef, useState, useTransition, type PointerEvent } from "react";
 import { TabItem } from "@/components/ui/tab-items";
 import { getCategoryPresentation } from "../sections";
 import type { Category, CollectionId } from "@/features/gallery/types";
@@ -12,6 +13,9 @@ export function CategoryNav({ section, categories, activeCategory }: {
   categories: Category[];
   activeCategory?: string;
 }) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [selectedCategory, setSelectedCategory] = useOptimistic(activeCategory ?? "");
   const navRef = useRef<HTMLElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -20,7 +24,7 @@ export function CategoryNav({ section, categories, activeCategory }: {
   const reduceMotion = useReducedMotion();
   const overscroll = useMotionValue(0);
   const stopMomentum = useCallback(() => { momentum.current?.stop(); momentum.current = null; overscroll.stop(); overscroll.set(0); }, [overscroll]);
-  useLayoutEffect(() => { stopMomentum(); return stopMomentum; }, [section, activeCategory, reduceMotion, stopMomentum]);
+  useLayoutEffect(() => { stopMomentum(); return stopMomentum; }, [section, selectedCategory, reduceMotion, stopMomentum]);
   const suppressClick = useRef(false);
   const [dragging, setDragging] = useState(false);
   const [scrollState, setScrollState] = useState({ overflow: false, left: false, right: false });
@@ -55,7 +59,7 @@ export function CategoryNav({ section, categories, activeCategory }: {
     if (item.left < bounds.left) viewport.scrollLeft += item.left - bounds.left;
     else if (item.right > bounds.right) viewport.scrollLeft += item.right - bounds.right;
     measure();
-  }, [section, activeCategory, scrollState.overflow, measure]);
+  }, [section, selectedCategory, scrollState.overflow, measure]);
 
   function startDrag(event: PointerEvent<HTMLDivElement>) {
     stopMomentum();
@@ -122,7 +126,7 @@ export function CategoryNav({ section, categories, activeCategory }: {
     ...categories.map(({ slug, name }) => ({ slug, name, href: `/${section}?category=${encodeURIComponent(slug)}` })),
   ];
   return (
-    <nav ref={navRef} aria-label="Categories" className="flex min-w-0 flex-1 items-center gap-2">
+    <nav ref={navRef} aria-label="Categories" data-navigation-pending={isPending} className="flex min-w-0 flex-1 items-center gap-2">
       <div className="relative min-w-0 flex-1 overflow-hidden">
         <motion.div
           style={{ x: overscroll }}
@@ -149,7 +153,7 @@ export function CategoryNav({ section, categories, activeCategory }: {
         >
           <div ref={contentRef} className="flex w-max items-center gap-2 py-1">
       {links.map(({ slug, name, href }) => {
-        const active = slug === (activeCategory ?? "");
+        const active = slug === selectedCategory;
         return (
           <TabItem
             key={slug}
@@ -157,7 +161,14 @@ export function CategoryNav({ section, categories, activeCategory }: {
             {...getCategoryPresentation(section, slug)}
             variant={active ? "active" : "inactive"}
             size="md"
-            render={<Link href={href} />}
+            render={<Link href={href} onNavigate={(event) => {
+              event.preventDefault();
+              if (!isPending && slug === (activeCategory ?? "")) return;
+              startTransition(() => {
+                setSelectedCategory(slug);
+                router.push(href);
+              });
+            }} />}
             aria-current={active ? "page" : undefined}
           />
         );

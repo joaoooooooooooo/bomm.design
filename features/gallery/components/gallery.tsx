@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { LayoutGroup } from "motion/react";
+import { LayoutGroup, motion, useReducedMotion } from "motion/react";
 import {
   MediaCard,
 } from "@/features/gallery/components/media-card";
@@ -19,7 +19,7 @@ export function Gallery({ section, category, categories, initialPage }: {
   initialPage: GalleryPage;
 }) {
   const onDialogActiveChange = useGalleryDialogActivity();
-
+  const reduceMotion = useReducedMotion();
   const layoutGroupId = useId();
   const [items, setItems] = useState(initialPage.items);
   const [nextCursor, setNextCursor] = useState(initialPage.nextCursor);
@@ -87,9 +87,11 @@ export function Gallery({ section, category, categories, initialPage }: {
         onLoadMore={loadMore}
         renderItem={(item, index) => (
           <LayoutGroup id={layoutGroupId}>
-            <div
+            <motion.div
               className="relative"
               tabIndex={-1}
+              whileTap={reduceMotion ? undefined : { scale: 0.98 }}
+              transition={{ type: "spring", duration: 0.3, bounce: 0 }}
             >
               <MediaCard
                 autoPlay={selectedIndex === null}
@@ -98,7 +100,7 @@ export function Gallery({ section, category, categories, initialPage }: {
                 mediaLayoutId={`media-${item.id}`}
               />
               <button
-                aria-label={`Open ${item.title}`}
+                aria-label={`Open ${item.title || item.media.alt}`}
                 className="absolute inset-0 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 onClick={(event) => {
                   const video = event.currentTarget.parentElement?.querySelector("video");
@@ -110,7 +112,7 @@ export function Gallery({ section, category, categories, initialPage }: {
                 }}
                 type="button"
               />
-            </div>
+            </motion.div>
           </LayoutGroup>
         )}
       />
