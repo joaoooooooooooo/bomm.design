@@ -8,7 +8,7 @@ import type {
   ShellNavGroup,
 } from "@/features/navigation/sections";
 
-export function NavGroup({ items, label }: ShellNavGroup) {
+export function NavGroup({ items, label, onNavigate, mobile = false }: ShellNavGroup & { onNavigate?: () => void; mobile?: boolean }) {
   const routeItemId = useSelectedLayoutSegment();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -24,13 +24,16 @@ export function NavGroup({ items, label }: ShellNavGroup) {
           label={item.title}
           render={<Link href={item.href} onNavigate={(event) => {
             event.preventDefault();
+            onNavigate?.();
             startTransition(() => {
               setActiveItemId(item.id);
               router.push(item.href);
             });
           }} />}
           aria-current={item.id === activeItemId ? "page" : undefined}
-          variant={item.id === activeItemId ? "active" : "inactive"}
+          variant={mobile
+            ? item.id === activeItemId ? "mobile-active" : "mobile-inactive"
+            : item.id === activeItemId ? "active" : "inactive"}
           className="w-full"
           data-sidebar="menu-button"
         />

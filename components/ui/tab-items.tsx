@@ -104,20 +104,28 @@ const tabIcons = {
 export type TabItemIconName = keyof typeof tabIcons;
 export type TabItemIconVariant = Exclude<IconProps["variant"], "inactive" | null | undefined>;
 
+const desktopTabLayout = "gap-2 sidebar-squircle rounded-[var(--sidebar-squircle-radius)] [--sidebar-squircle-radius:50px] py-1 pl-1 pr-2 text-sm leading-5";
+const mobileTabLayout = "gap-3.5 sidebar-squircle rounded-[var(--sidebar-squircle-radius)] [--sidebar-squircle-radius:var(--radius-md)] p-2.5 text-xl leading-7 tracking-[-0.01em]";
+
 export const tabItemVariants = cva(
-  "inline-flex min-w-0 shrink-0 cursor-pointer items-center gap-2 sidebar-squircle rounded-[var(--sidebar-squircle-radius)] [--sidebar-squircle-radius:50px] py-1 pl-1 pr-2 text-left text-sm font-normal leading-5 outline-none transition-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex min-w-0 shrink-0 cursor-pointer items-center text-left font-normal outline-none transition-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
   {
     defaultVariants: { variant: "active", size: "default" },
     variants: {
       variant: {
-        active: "bg-sidebar-accent text-foreground",
-        inactive: "bg-transparent text-muted-foreground hover:bg-sidebar-accent hover:text-foreground",
+        active: `${desktopTabLayout} bg-sidebar-accent text-foreground`,
+        inactive: `${desktopTabLayout} bg-transparent text-muted-foreground hover:bg-sidebar-accent hover:text-foreground`,
+        "mobile-active": `${mobileTabLayout} bg-sidebar-accent text-foreground`,
+        "mobile-inactive": `${mobileTabLayout} bg-transparent text-muted-foreground hover:bg-sidebar-accent hover:text-foreground`,
       },
       size: {
         default: "w-[197px]",
         md: "w-fit",
       },
     },
+    compoundVariants: [
+      { variant: ["mobile-active", "mobile-inactive"], size: "default", className: "w-[211px]" },
+    ],
   },
 );
 
@@ -144,8 +152,9 @@ export function TabItem({
   ...props
 }: TabItemProps): React.ReactElement {
   const reduceMotion = useReducedMotion();
-  const isActive = variant === "active";
-  const iconSize = size === "md" ? "md" : "lg";
+  const isMobile = variant === "mobile-active" || variant === "mobile-inactive";
+  const isActive = variant === "active" || variant === "mobile-active";
+  const iconSize = !isMobile && size === "md" ? "md" : "lg";
   const defaultProps = {
     className: cn(tabItemVariants({ variant, size, className })),
     "data-slot": "tab-item",
@@ -154,7 +163,7 @@ export function TabItem({
     type: render ? undefined : "button" as const,
     children: (
       <motion.span
-        className={cn("flex w-full min-w-0 items-center", size === "md" ? "gap-1" : "gap-2")}
+        className={cn("flex w-full min-w-0 items-center", isMobile ? "gap-3.5" : size === "md" ? "gap-1" : "gap-2")}
         tabIndex={-1}
         whileTap={reduceMotion ? undefined : { scale: 0.98 }}
         transition={{ type: "spring", duration: 0.3, bounce: 0 }}
@@ -162,13 +171,13 @@ export function TabItem({
         <span className="relative inline-flex shrink-0">
           <motion.span
             aria-hidden="true"
-            className={cn(iconVariants({ variant: iconVariant }), "sidebar-squircle pointer-events-none absolute inset-0 rounded-[var(--sidebar-squircle-radius)] p-0")}
+            className={cn(iconVariants({ variant: iconVariant }), "sidebar-squircle pointer-events-none absolute inset-0 rounded-[var(--sidebar-squircle-radius)] p-0", isMobile && "[--sidebar-squircle-radius:var(--radius-sm)]")}
             initial={false}
             animate={{ scale: isActive ? 1 : 0 }}
             transition={{ type: "spring", duration: reduceMotion ? 0 : 0.3, bounce: 0 }}
           />
           <Icon
-            className="sidebar-squircle rounded-[var(--sidebar-squircle-radius)] bg-transparent"
+            className={cn("sidebar-squircle rounded-[var(--sidebar-squircle-radius)] bg-transparent", isMobile && "[--sidebar-squircle-radius:var(--radius-sm)]")}
             icon={tabIcons[iconName]}
             weight={iconWeight}
             size={iconSize}

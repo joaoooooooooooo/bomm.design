@@ -1,6 +1,9 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useEffect, useState } from "react";
+import { ListIcon, XIcon } from "@phosphor-icons/react/ssr";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetClose, SheetPopup, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useSelectedLayoutSegment } from "next/navigation";
 import { BomboCharacter } from "@/features/navigation/components/bombo-character";
@@ -61,8 +64,19 @@ function SidebarCharacter({ paused }: { paused?: boolean }) {
 }
 
 export const AppSidebar = memo(function AppSidebar({ animationPaused }: { animationPaused?: boolean }) {
-  return (
-    <Sidebar className="*:data-[slot=sidebar-inner]:bg-background" collapsible="none" variant="sidebar">
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 768px)");
+    const closeOnDesktop = () => {
+      if (desktop.matches) setMobileOpen(false);
+    };
+    desktop.addEventListener("change", closeOnDesktop);
+    return () => desktop.removeEventListener("change", closeOnDesktop);
+  }, []);
+
+  const content = (mobile: boolean) => (
+    <>
       <SidebarContent className="gap-3 py-2">
         <div className="px-3 pt-2">
           <div className="flex justify-start">
@@ -73,6 +87,8 @@ export const AppSidebar = memo(function AppSidebar({ animationPaused }: { animat
           <NavGroup
             key={group.label}
             {...group}
+            mobile={mobile}
+            onNavigate={() => setMobileOpen(false)}
           />
         ))}
       </SidebarContent>
@@ -82,6 +98,38 @@ export const AppSidebar = memo(function AppSidebar({ animationPaused }: { animat
           <ThemeToggle />
         </div>
       </SidebarFooter>
-    </Sidebar>
+    </>
+  );
+
+  return (
+    <>
+      <Sidebar className="*:data-[slot=sidebar-inner]:bg-background" collapsible="none" variant="sidebar">
+        {content(false)}
+      </Sidebar>
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <div className="fixed inset-x-0 top-0 z-30 border-b border-border bg-background pt-[env(safe-area-inset-top)] md:hidden">
+          <div className="flex h-16 items-center px-3">
+            <SheetTrigger render={<Button variant="ghost" className="h-11 gap-2 px-3 text-sm font-normal sm:h-11" />}>
+              <ListIcon aria-hidden="true" className="size-4" />
+              Menu
+            </SheetTrigger>
+          </div>
+        </div>
+        <SheetPopup
+          side="left"
+          showCloseButton={false}
+          className="h-dvh w-full max-w-none border-0 bg-background text-foreground pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] transition-transform duration-300 ease-out data-starting-style:-translate-x-full data-ending-style:-translate-x-full data-starting-style:opacity-100 data-ending-style:opacity-100 motion-reduce:transition-none motion-reduce:data-starting-style:translate-x-0 motion-reduce:data-ending-style:translate-x-0"
+        >
+          <div className="flex h-16 shrink-0 items-center border-b border-border px-3">
+            <SheetTitle className="sr-only">Menu</SheetTitle>
+            <SheetClose render={<Button variant="ghost" className="h-11 gap-2 px-3 text-sm font-normal sm:h-11" />}>
+              <XIcon aria-hidden="true" className="size-4" />
+              Close
+            </SheetClose>
+          </div>
+          {content(true)}
+        </SheetPopup>
+      </Sheet>
+    </>
   );
 });

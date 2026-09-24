@@ -29,7 +29,7 @@ export function AvatarBadge({
         "inline-flex items-center rounded-full",
         isSecondary
           ? "gap-3 border border-border bg-background p-0.5"
-          : "gap-2 bg-black/25 p-1",
+          : "gap-2 bg-black/25 p-1 backdrop-blur-sm",
         className,
       )}
       data-slot="avatar-badge"

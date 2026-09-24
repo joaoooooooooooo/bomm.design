@@ -1,5 +1,5 @@
 "use client";
-import { useState, type ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import { MotionConfig } from "motion/react";
 import { Agentation } from "agentation";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -12,9 +12,9 @@ export function NavigationShell({ children }: { children: ReactNode }) {
   return (
     <MotionConfig reducedMotion="user">
       <GalleryDialogActivityContext.Provider value={setIsDialogActive}>
-        <SidebarProvider>
+        <SidebarProvider style={{ "--sidebar-width": "216px" } as CSSProperties}>
           <AppSidebar animationPaused={isDialogActive} />
-          <SidebarInset className="min-w-0">{children}</SidebarInset>
+          <SidebarInset className="min-w-0 pt-[calc(4rem+env(safe-area-inset-top))] md:pt-0">{children}</SidebarInset>
           {process.env.NODE_ENV === "development" && <Agentation />}
         </SidebarProvider>
       </GalleryDialogActivityContext.Provider>
