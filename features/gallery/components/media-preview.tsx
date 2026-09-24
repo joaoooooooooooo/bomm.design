@@ -129,9 +129,28 @@ function VideoPreview({
     const host = hostRef.current;
     if (!video || !host) return;
     const metadata = () => reportMetadata();
-    const ready = () => reportReady();
+    let retries = 0;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+    const ready = () => {
+      if (video.parentElement !== host) return;
+      setHasError(false);
+      reportReady();
+    };
     const error = () => {
       if (video.parentElement !== host) return;
+      // Retry transient network errors twice; unsupported/undecodable files
+      // need a replacement source, not repeated downloads.
+      if (video.error?.code === MediaError.MEDIA_ERR_NETWORK && retries < 2) {
+        if (retryTimer) return;
+        retries += 1;
+        retryTimer = setTimeout(() => {
+          retryTimer = undefined;
+          if (video.parentElement !== host) return;
+          video.load();
+          updatePlayback();
+        }, retries * 1000);
+        return;
+      }
       setHasError(true);
       reportReady();
     };
@@ -148,9 +167,11 @@ function VideoPreview({
     video.addEventListener(OWNERSHIP_CHANGE, refresh);
     document.addEventListener("visibilitychange", refresh);
     if (video.readyState >= 1) reportMetadata();
-    if (video.readyState >= 2) reportReady();
+    if (video.readyState >= 2) ready();
+    if (video.error) error();
     updatePlayback();
     return () => {
+      clearTimeout(retryTimer);
       observer.disconnect();
       video.removeEventListener("loadedmetadata", metadata);
       video.removeEventListener("loadeddata", ready);

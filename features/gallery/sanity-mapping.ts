@@ -40,8 +40,9 @@ export function mapSanityGalleryItem(item: SanityGalleryItem, config: { projectI
   } else if (item.media?.type === "video" && httpUrl(item.media.videoUrl)) {
     media = {
       type: "video", src: httpUrl(item.media.videoUrl)!, alt: mediaLabel,
-      // Studio has no video dimensions. The existing dialog reads real metadata.
-      width: 1280, height: 720,
+      // Imported dimensions reserve the right grid height before playback loads.
+      width: item.media.width && item.media.width > 0 && item.media.height && item.media.height > 0 ? item.media.width : 1280,
+      height: item.media.width && item.media.width > 0 && item.media.height && item.media.height > 0 ? item.media.height : 720,
     };
   } else {
     throw new Error(`Gallery item ${item._id} needs an image asset or a playable HTTP(S) video URL.`);

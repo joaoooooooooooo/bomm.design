@@ -9,7 +9,7 @@ import { MediaCardDialog } from "@/features/gallery/components/media-card-dialog
 import { captureVideoHandoff, releaseVideoHandoff, type VideoHandoff } from "@/features/gallery/components/media-preview";
 import { MasonryGrid } from "@/features/gallery/components/masonry-grid";
 
-import type { Category, GalleryPost, GalleryPage, CollectionId } from "../types";
+import type { Category, GalleryPost, GalleryPage, CollectionId, MediaDimensions } from "../types";
 import { useGalleryDialogActivity } from "../dialog-activity";
 
 export function Gallery({ section, category, categories, initialPage }: {
@@ -44,6 +44,18 @@ export function Gallery({ section, category, categories, initialPage }: {
     columnWidth > 0 ? columnWidth * item.media.height / item.media.width : 360,
   []);
   const getItemKey = useCallback((item: GalleryPost) => item.id, []);
+
+  const updateVideoDimensions = useCallback((id: string, src: string, { width, height }: MediaDimensions) => {
+    if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return;
+    setItems((current) => {
+      const index = current.findIndex((item) => item.id === id && item.media.src === src);
+      const item = current[index];
+      if (!item || item.media.type !== "video" || (item.media.width === width && item.media.height === height)) return current;
+      const next = [...current];
+      next[index] = { ...item, media: { ...item.media, width, height } };
+      return next;
+    });
+  }, []);
 
   const loadMore = useCallback(async () => {
     if (requestInFlight.current || !nextCursor) return;
@@ -96,6 +108,7 @@ export function Gallery({ section, category, categories, initialPage }: {
               <MediaCard
                 autoPlay={selectedIndex === null}
                 item={item}
+                onMediaDimensionsChange={(dimensions) => updateVideoDimensions(item.id, item.media.src, dimensions)}
                 isOpening={index === selectedIndex}
                 mediaLayoutId={`media-${item.id}`}
               />

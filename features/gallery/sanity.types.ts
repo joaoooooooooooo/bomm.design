@@ -46,6 +46,13 @@ export type AuthorReference = {
   [internalGroqTypeReferenceTo]?: "author";
 };
 
+export type SanityFileAssetReference = {
+  _ref: string;
+  _type: "reference";
+  _weak?: boolean;
+  [internalGroqTypeReferenceTo]?: "sanity.fileAsset";
+};
+
 export type GalleryItem = {
   _id: string;
   _type: "galleryItem";
@@ -76,6 +83,13 @@ export type GalleryItem = {
       crop?: SanityImageCrop;
       _type: "image";
     };
+    video?: {
+      asset?: SanityFileAssetReference;
+      media?: unknown;
+      _type: "file";
+    };
+    width?: number;
+    height?: number;
     videoUrl?: string;
   };
   sourcePlatform?: "Instagram" | "X" | "LinkedIn" | "Other";
@@ -221,6 +235,7 @@ export type AllSanitySchemaTypes =
   | Slug
   | SanityImageAssetReference
   | AuthorReference
+  | SanityFileAssetReference
   | GalleryItem
   | SanityImageCrop
   | SanityImageHotspot
@@ -236,7 +251,7 @@ export type AllSanitySchemaTypes =
 
 // Source: ../brasa-app/features/gallery/sanity-query.ts
 // Variable: GALLERY_QUERY
-// Query: {  "cursorExists": $cursor == null || count(*[    _type == "galleryItem" && _id == $cursor && collection == $collection &&    ($category == null || $category in categories)  ]) > 0,  "items": *[    _type == "galleryItem" && collection in ["design", "websites", "tools"] &&    ($collection == null || collection == $collection) &&    ($category == null || $category in categories) &&    ($id == null || _id == $id) && ($cursor == null || _id > $cursor)  ] | order(_id asc)[0...49] {    _id, title, collection, categories, sourcePlatform, sourceUrl, externalPostId,    "author": coalesce(authorDetails, author->{handle, profileUrl, profileImage}) {      handle, profileUrl, profileImage    },    media {type, videoUrl, image, "dimensions": image.asset->metadata.dimensions}  }}
+// Query: {  "cursorExists": $cursor == null || count(*[    _type == "galleryItem" && _id == $cursor && collection == $collection &&    ($category == null || $category in categories)  ]) > 0,  "items": *[    _type == "galleryItem" && collection in ["design", "websites", "tools"] &&    ($collection == null || collection == $collection) &&    ($category == null || $category in categories) &&    ($id == null || _id == $id) && ($cursor == null || _id > $cursor)  ] | order(_id asc)[0...49] {    _id, title, collection, categories, sourcePlatform, sourceUrl, externalPostId,    "author": coalesce(authorDetails, author->{handle, profileUrl, profileImage}) {      handle, profileUrl, profileImage    },    media {type, width, height, "videoUrl": coalesce(video.asset->url, videoUrl), image, "dimensions": image.asset->metadata.dimensions}  }}
 export type GALLERY_QUERY_RESULT = {
   cursorExists: boolean;
   items: Array<{
@@ -260,6 +275,8 @@ export type GALLERY_QUERY_RESULT = {
     } | null;
     media: {
       type: "image" | "video" | null;
+      width: number | null;
+      height: number | null;
       videoUrl: string | null;
       image: {
         asset?: SanityImageAssetReference;
@@ -276,7 +293,7 @@ export type GALLERY_QUERY_RESULT = {
 // Query TypeMap
 declare global {
   interface SanityQueries {
-    '{\n  "cursorExists": $cursor == null || count(*[\n    _type == "galleryItem" && _id == $cursor && collection == $collection &&\n    ($category == null || $category in categories)\n  ]) > 0,\n  "items": *[\n    _type == "galleryItem" && collection in ["design", "websites", "tools"] &&\n    ($collection == null || collection == $collection) &&\n    ($category == null || $category in categories) &&\n    ($id == null || _id == $id) && ($cursor == null || _id > $cursor)\n  ] | order(_id asc)[0...49] {\n    _id, title, collection, categories, sourcePlatform, sourceUrl, externalPostId,\n    "author": coalesce(authorDetails, author->{handle, profileUrl, profileImage}) {\n      handle, profileUrl, profileImage\n    },\n    media {type, videoUrl, image, "dimensions": image.asset->metadata.dimensions}\n  }\n}': GALLERY_QUERY_RESULT;
+    '{\n  "cursorExists": $cursor == null || count(*[\n    _type == "galleryItem" && _id == $cursor && collection == $collection &&\n    ($category == null || $category in categories)\n  ]) > 0,\n  "items": *[\n    _type == "galleryItem" && collection in ["design", "websites", "tools"] &&\n    ($collection == null || collection == $collection) &&\n    ($category == null || $category in categories) &&\n    ($id == null || _id == $id) && ($cursor == null || _id > $cursor)\n  ] | order(_id asc)[0...49] {\n    _id, title, collection, categories, sourcePlatform, sourceUrl, externalPostId,\n    "author": coalesce(authorDetails, author->{handle, profileUrl, profileImage}) {\n      handle, profileUrl, profileImage\n    },\n    media {type, width, height, "videoUrl": coalesce(video.asset->url, videoUrl), image, "dimensions": image.asset->metadata.dimensions}\n  }\n}': GALLERY_QUERY_RESULT;
   }
 }
 // Lets @sanity/client releases that predate the global registry read it too

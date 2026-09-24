@@ -11,12 +11,13 @@ import { MediaPreview } from "./media-preview";
 
 export type MediaCardVariant = "default" | "hover" | "expanded";
 
-import type { GalleryPost } from "../types";
+import type { GalleryPost, MediaDimensions } from "../types";
 
 export interface MediaCardProps extends ComponentProps<"article"> {
   autoPlay?: boolean;
   contentClassName?: string;
   item: GalleryPost;
+  onMediaDimensionsChange?: (dimensions: MediaDimensions) => void;
   mediaLayoutId?: string;
   isOpening?: boolean;
   variant?: MediaCardVariant;
@@ -28,6 +29,7 @@ export function MediaCard({
   className,
   contentClassName,
   item,
+  onMediaDimensionsChange,
   mediaLayoutId,
   isOpening = false,
   variant = "default",
@@ -84,6 +86,7 @@ export function MediaCard({
             )}
             fit={isExpanded ? "contain" : "cover"}
             media={item.media}
+            onDimensionsChange={item.media.type === "video" ? onMediaDimensionsChange : undefined}
             onReady={() => setReadySource(item.media.src)}
             preload={isExpanded ? "auto" : "metadata"}
           />

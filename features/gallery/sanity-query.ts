@@ -16,6 +16,6 @@ export const GALLERY_QUERY = defineQuery(`{
     "author": coalesce(authorDetails, author->{handle, profileUrl, profileImage}) {
       handle, profileUrl, profileImage
     },
-    media {type, videoUrl, image, "dimensions": image.asset->metadata.dimensions}
+    media {type, width, height, "videoUrl": coalesce(video.asset->url, videoUrl), image, "dimensions": image.asset->metadata.dimensions}
   }
 }`);

@@ -187,7 +187,7 @@ export function MasonryGrid<T>({
   useLayoutEffect(() => {
     // Metadata or column width changed: invalidate once, without measuring each card.
     virtualizer.measure();
-  }, [virtualizer, getItemSize, columnWidth]);
+  }, [virtualizer, getItemSize, columnWidth, items]);
 
   const virtualItems = virtualizer.getVirtualItems();
   const viewportEnd =
