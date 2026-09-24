@@ -2,20 +2,20 @@
 
 import { TabItem } from "@/components/ui/tab-items";
 import Link from "next/link";
-import { useRouter, useSelectedLayoutSegment } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useOptimistic, useTransition } from "react";
 import type {
   ShellNavGroup,
 } from "@/features/navigation/sections";
 
-export function NavGroup({ items, label, onNavigate, mobile = false }: ShellNavGroup & { onNavigate?: () => void; mobile?: boolean }) {
-  const routeItemId = useSelectedLayoutSegment();
+export function NavGroup({ items, label, mobile = false }: ShellNavGroup & { mobile?: boolean }) {
+  const routeItemId = usePathname().split("/")[1];
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [activeItemId, setActiveItemId] = useOptimistic(routeItemId);
 
   return (
-    <nav aria-label={label} data-navigation-pending={isPending} className="space-y-1 px-2 py-1">
+    <nav aria-label={label} data-navigation-pending={isPending} className={mobile ? "flex flex-wrap items-center gap-x-3 gap-y-4 px-4 py-3" : "space-y-1 px-2 py-1"}>
       {items.map((item) => (
         <TabItem
           key={item.title}
@@ -24,18 +24,16 @@ export function NavGroup({ items, label, onNavigate, mobile = false }: ShellNavG
           label={item.title}
           render={<Link href={item.href} onNavigate={(event) => {
             event.preventDefault();
-            onNavigate?.();
             startTransition(() => {
               setActiveItemId(item.id);
               router.push(item.href);
             });
           }} />}
           aria-current={item.id === activeItemId ? "page" : undefined}
-          variant={mobile
-            ? item.id === activeItemId ? "mobile-active" : "mobile-inactive"
-            : item.id === activeItemId ? "active" : "inactive"}
-          className="w-full"
-          data-sidebar="menu-button"
+          variant={item.id === activeItemId ? "active" : "inactive"}
+          size={mobile ? "md" : "default"}
+          className={mobile ? "relative before:absolute before:inset-x-0 before:top-1/2 before:h-11 before:-translate-y-1/2" : "w-full"}
+          data-sidebar={mobile ? undefined : "menu-button"}
         />
       ))}
     </nav>

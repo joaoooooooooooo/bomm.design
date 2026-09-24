@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { DragHandle } from "@/components/ui/drag-handle";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { XIcon } from "lucide-react";
 import type { Category, GalleryPost } from "../types";
@@ -46,7 +47,7 @@ function MediaDialogContent({
   const isMobile = useMediaQuery("(width < 48rem)");
   const dragOffset = useMotionValue(0);
   const detailsDragRatio = useMotionValue(CAROUSEL_DETAILS_DRAG_RATIO);
-  const carouselTranslate = useTransform(() => isMobile ? `0px ${dragOffset.get()}px` : `${dragOffset.get()}px 0px`);
+  const carouselTranslate = useTransform(() => isMobile ? "0px 0px" : `${dragOffset.get()}px 0px`);
   const detailsTranslate = useTransform(() => isMobile ? `0px ${-dragOffset.get() * detailsDragRatio.get()}px` : `${-dragOffset.get() * detailsDragRatio.get()}px 0px`);
   const detailsRef = useRef<HTMLDivElement>(null);
   const detailsSizeRef = useRef(0);
@@ -135,10 +136,12 @@ function MediaDialogContent({
             <motion.section
               aria-label="Collection media"
               className="relative z-10 min-h-0 pt-[env(safe-area-inset-top)] md:pt-0"
-              style={{ translate: carouselTranslate, willChange: "translate" }}
+              style={{ translate: carouselTranslate, willChange: isMobile ? undefined : "translate" }}
               initial={false}
+              animate={{ opacity: 1 }}
               exit={{
-                transform: reduceMotion ? "none" : isMobile ? "translateY(-100dvh)" : "translateX(-100vw)",
+                opacity: isMobile ? 0 : 1,
+                transform: reduceMotion || isMobile ? "none" : "translateX(-100vw)",
                 transition: exitTransition,
               }}
               transition={transition}
@@ -163,9 +166,9 @@ function MediaDialogContent({
                 transition: exitTransition,
               }}
               transition={transition}
-              className="relative z-20 flex h-full min-h-0 flex-col rounded-t-2xl border-t border-border bg-card pt-14 text-foreground after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-dvh after:bg-card md:z-auto md:overflow-hidden md:rounded-none md:border-l md:border-t-0 md:pt-10 md:after:hidden"
+              className="relative z-20 flex h-full min-h-0 flex-col border-t border-border bg-card pt-12 text-foreground after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-dvh after:bg-card md:z-auto md:overflow-hidden md:border-l md:border-t-0 md:pt-10 md:after:hidden"
             >
-              <div data-mobile-dismiss-handle className="absolute inset-x-14 top-0 flex h-12 touch-none select-none items-center justify-center md:hidden">
+              <div data-mobile-dismiss-handle className="absolute inset-x-14 top-0 flex h-10 touch-none select-none items-center justify-center md:hidden">
                 <DragHandle orientation="horizontal" />
               </div>
               <DragHandle
@@ -179,9 +182,15 @@ function MediaDialogContent({
               >
                 <XIcon />
               </DialogClose>
-              <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:px-10 md:pb-10">
-                <MediaDialogDetails categories={categories} item={activeItem} />
-              </div>
+              <ScrollArea
+                className="min-h-0 flex-1 [&_[data-slot=scroll-area-scrollbar]]:opacity-100 md:[&_[data-slot=scroll-area-scrollbar]]:hidden"
+                overscrollContain
+                scrollFade={isMobile}
+              >
+                <div className="px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] md:px-10 md:pb-10">
+                  <MediaDialogDetails categories={categories} item={activeItem} />
+                </div>
+              </ScrollArea>
             </motion.div>
           </motion.div>
         </DialogPrimitive.Popup>
