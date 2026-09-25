@@ -84,7 +84,7 @@ function MediaDialogContent({
           className="relative h-dvh w-full overflow-hidden bg-background md:h-full md:bg-transparent"
         >
           <motion.div
-            className="grid h-full min-h-0 grid-rows-[minmax(0,3fr)_minmax(0,2fr)] touch-pan-y md:grid-cols-[minmax(0,0.7fr)_minmax(20rem,0.3fr)] md:grid-rows-1"
+            className="grid h-full min-h-0 grid-rows-[minmax(0,3fr)_minmax(0,2fr)] touch-pan-y md:grid-cols-[minmax(0,7fr)_minmax(0,3fr)] md:grid-rows-1 lg:grid-cols-[minmax(0,7fr)_minmax(20rem,3fr)]"
             onPointerDownCapture={(event) => {
               const target = event.target as Element;
               gesture.current.axis = "";

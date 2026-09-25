@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, type ComponentProps } from "react";
+import { useEffect, useRef, useState, type ComponentProps } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { ArrowUpRightIcon } from "@phosphor-icons/react/ssr";
 import { ArrowLink } from "./arrow-link";
 import { AvatarBadge } from "./avatar-badge";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { buttonPressAnimation, cn } from "@/lib/utils";
 import { MediaPreview } from "./media-preview";
 
 export type MediaCardVariant = "default" | "hover" | "expanded";
@@ -38,11 +38,30 @@ export function MediaCard({
   const isExpanded = variant === "expanded";
   const reduceMotion = useReducedMotion();
   const shouldAutoPlay = autoPlay ?? variant === "default";
-  const sourceLabel = item.source.label ?? "See post";
+  const isWebsite = item.section === "websites";
+  const sourceLabel = isWebsite ? "Visit website" : item.source.label ?? "See post";
+  const identityName = isWebsite ? item.website?.name ?? new URL(item.source.url).hostname.replace(/^www\./, "") : item.author?.handle ?? "";
+  const identityImage = isWebsite ? item.website?.favicon ?? new URL("/favicon.ico", item.source.url).href : item.author?.avatar?.src ?? "";
+  const identityAlt = isWebsite ? "" : item.author?.avatar?.alt ?? identityName;
   const [readySource, setReadySource] = useState<string>();
+  const [requestedSource, setRequestedSource] = useState<string>();
+  const mediaRef = useRef<HTMLDivElement>(null);
+  const shouldLoad = isExpanded || requestedSource === item.media.src;
   const isReady = readySource === item.media.src;
   // The grid and its placeholder use the same metadata, before bytes are loaded.
   const mediaAspectRatio = `${item.media.width} / ${item.media.height}`;
+
+  useEffect(() => {
+    const element = mediaRef.current;
+    if (!element || shouldLoad) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      setRequestedSource(item.media.src);
+      observer.disconnect();
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [item.media.src, shouldLoad]);
 
   return (
     <article
@@ -65,18 +84,20 @@ export function MediaCard({
         style={isExpanded ? undefined : { aspectRatio: mediaAspectRatio }}
       >
         <motion.div
+          ref={mediaRef}
           layoutId={reduceMotion ? undefined : mediaLayoutId}
           layoutDependency={isOpening}
           layoutCrossfade={false}
           transition={{ layout: { type: "spring", bounce: 0, duration: 0.4 } }}
           className={cn(
-            "relative h-full w-full overflow-hidden rounded-2xl",
+            "w-full overflow-hidden rounded-2xl",
+            isExpanded ? "relative h-full" : "absolute inset-0",
           )}
         >
           {!isReady && (
             <div aria-hidden="true" data-slot="media-placeholder" className="absolute inset-0 rounded-2xl bg-muted" />
           )}
-          <MediaPreview
+          {shouldLoad && <MediaPreview
             autoPlay={shouldAutoPlay}
             className={cn(
               !isReady && "invisible",
@@ -89,13 +110,14 @@ export function MediaCard({
             onDimensionsChange={item.media.type === "video" ? onMediaDimensionsChange : undefined}
             onReady={() => setReadySource(item.media.src)}
             preload={isExpanded ? "auto" : "metadata"}
-          />
+          />}
           {!isExpanded && isReady ? (
             <div className="absolute inset-x-2 bottom-2 z-10 flex items-center justify-between">
               <AvatarBadge
-                avatarAlt={item.author.avatar?.alt ?? item.author.handle}
-                avatarSrc={item.author.avatar?.src}
-                username={item.author.handle}
+                avatarAlt={identityAlt}
+                avatarSrc={identityImage}
+                username={identityName}
+                website={isWebsite}
               />
               {variant === "default" ? (
                 <ArrowLink
@@ -113,9 +135,10 @@ export function MediaCard({
         <div className="flex shrink-0 flex-col items-start justify-start gap-5 p-2 py-1 text-center">
           <AvatarBadge
             className="h-fit w-fit"
-            avatarAlt={item.author.avatar?.alt ?? item.author.handle}
-            avatarSrc={item.author.avatar?.src}
-            username={item.author.handle}
+            avatarAlt={identityAlt}
+            avatarSrc={identityImage}
+            username={identityName}
+            website={isWebsite}
             variant="secondary"
           />
           {item.title ? <h3 className="max-w-[264px] text-left text-3xl text-white">
@@ -123,7 +146,7 @@ export function MediaCard({
           </h3> : null}
           <Button
             className="h-fit w-fit"
-            render={<a href={item.source.url} rel="noreferrer" target="_blank" />}
+            render={<motion.a {...buttonPressAnimation} whileTap={reduceMotion ? undefined : buttonPressAnimation.whileTap} href={item.source.url} rel="noreferrer" target="_blank" />}
             variant="outline"
           >
             {sourceLabel}

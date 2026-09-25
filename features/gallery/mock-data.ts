@@ -245,8 +245,9 @@ const sectionSources: Record<Exclude<CollectionId, "logos">, readonly number[]> 
 };
 
 const slugify = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const categorySlug = (name: string) => name === "Graphic" ? "print" : slugify(name);
 
-const designCategories = ["Branding", "Motion", "Logos", "Illustration", "3d", "Print", "Product", "Objects", "Interface"];
+const designCategories = ["Branding", "Motion", "Logos", "Illustration", "3d", "Graphic", "Product", "Objects", "Interface", "Photography"];
 
 const websiteCategories = ["Portfolio", "Agency", "SaaS", "Blog", "E-Commerce", "Artificial Intelligence", "Art and Design"];
 // Existing demo sources: Morpho, Aave, and Framer. Other categories start empty.
@@ -262,9 +263,9 @@ const toolsPostCategories = ["Motion", "Design Tools", "Design Tools", "Motion",
 
 export const galleryCategories: Category[] = Object.keys(sectionSources).flatMap((section) =>
   (section === "design" ? designCategories : section === "websites" ? websiteCategories : toolsCategories).map((name, order) => ({
-    id: `${section}-${slugify(name)}`,
-    name,
-    slug: slugify(name),
+    id: `${section}-${categorySlug(name)}`,
+    name: name === "Motion" ? "Motion/Animation" : name,
+    slug: categorySlug(name),
     section: section as CollectionId,
     order,
   })),
@@ -280,7 +281,7 @@ export const galleryPosts: GalleryPost[] = Object.entries(sectionSources).flatMa
       slug: id,
       title: source.title,
       section: section as CollectionId,
-      categoryIds: [`${section}-${slugify(section === "design" ? designCategories[index % indices.length] : section === "websites" ? websitePostCategories[index % indices.length] : toolsPostCategories[index % indices.length])}`],
+      categoryIds: [`${section}-${categorySlug(section === "design" ? designCategories[index % indices.length] : section === "websites" ? websitePostCategories[index % indices.length] : toolsPostCategories[index % indices.length])}`],
       author: { ...source.author, id: source.author.handle, name: source.author.handle },
       source: source.source,
       media: source.media,

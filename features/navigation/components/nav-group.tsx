@@ -31,8 +31,8 @@ export function NavGroup({ items, label, mobile = false }: ShellNavGroup & { mob
           }} />}
           aria-current={item.id === activeItemId ? "page" : undefined}
           variant={item.id === activeItemId ? "active" : "inactive"}
-          size={mobile ? "md" : "default"}
-          className={mobile ? "relative before:absolute before:inset-x-0 before:top-1/2 before:h-11 before:-translate-y-1/2" : "w-full"}
+          size="default"
+          className={mobile ? "relative w-fit before:absolute before:inset-x-0 before:top-1/2 before:h-11 before:-translate-y-1/2" : "w-full"}
           data-sidebar={mobile ? undefined : "menu-button"}
         />
       ))}

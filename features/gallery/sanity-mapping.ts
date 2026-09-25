@@ -18,12 +18,17 @@ export function mapSanityGalleryItem(item: SanityGalleryItem, config: { projectI
   if (section !== "design" && section !== "websites" && section !== "tools") {
     throw new Error(`Gallery item ${item._id} has an invalid collection.`);
   }
-  const sourceUrl = httpUrl(item.sourceUrl);
-  if (!item.author?.handle || !sourceUrl) {
-    throw new Error(`Gallery item ${item._id} needs an author handle and HTTP(S) source URL.`);
+  const isWebsite = section === "websites";
+  const sourceUrl = httpUrl(isWebsite ? item.websiteDetails?.url ?? item.sourceUrl : item.sourceUrl);
+  if (!sourceUrl) {
+    throw new Error(`Gallery item ${item._id} needs an HTTP(S) ${isWebsite ? "website" : "source"} URL.`);
   }
+  if (!isWebsite && !item.author?.handle) {
+    throw new Error(`Gallery item ${item._id} needs an author handle.`);
+  }
+  const domain = new URL(sourceUrl).hostname.replace(/^www\./, "");
   const title = item.title?.trim() || "";
-  const mediaLabel = title || `Post by ${item.author.handle}`;
+  const mediaLabel = title || (isWebsite ? item.websiteDetails?.name?.trim() || domain : `Post by ${item.author!.handle}`);
   const builder = createImageUrlBuilder(config);
   let media: GalleryMedia;
   if (item.media?.type === "image" && item.media.image && item.media.dimensions) {
@@ -58,7 +63,8 @@ export function mapSanityGalleryItem(item: SanityGalleryItem, config: { projectI
   }
   return {
     id: item._id, slug: item._id, title, section, categoryIds,
-    author: {
+    description: item.description?.trim() || undefined,
+    author: !isWebsite && item.author?.handle ? {
       id: `${item._id}-author`, name: item.author.handle,
       handle: item.author.handle,
       website: httpUrl(item.author.profileUrl),
@@ -66,9 +72,16 @@ export function mapSanityGalleryItem(item: SanityGalleryItem, config: { projectI
         alt: item.author.handle,
         src: builder.image(item.author.profileImage).width(96).height(96).fit("crop").auto("format").url(),
       } : undefined,
-    },
+    } : undefined,
+    website: isWebsite ? {
+      name: item.websiteDetails?.name?.trim() || domain,
+      domain,
+      favicon: item.websiteDetails?.favicon?.asset
+        ? builder.image(item.websiteDetails.favicon).width(64).height(64).fit("max").auto("format").url()
+        : httpUrl(item.websiteDetails?.faviconUrl) ?? new URL("/favicon.ico", sourceUrl).href,
+    } : undefined,
     media,
-    source: { url: sourceUrl, platform: item.sourcePlatform ?? undefined },
+    source: { url: sourceUrl, label: isWebsite ? "Visit website" : undefined, platform: isWebsite ? undefined : item.sourcePlatform ?? undefined },
     externalPostId: item.externalPostId ?? undefined,
     status: "published",
   };

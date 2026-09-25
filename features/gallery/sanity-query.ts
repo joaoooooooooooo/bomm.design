@@ -12,7 +12,8 @@ export const GALLERY_QUERY = defineQuery(`{
     ($category == null || $category in categories) &&
     ($id == null || _id == $id) && ($cursor == null || _id > $cursor)
   ] | order(_id asc)[0...49] {
-    _id, title, collection, categories, sourcePlatform, sourceUrl, externalPostId,
+    _id, title, description, collection, categories, sourcePlatform, sourceUrl, externalPostId,
+    websiteDetails {name, url, favicon, faviconUrl},
     "author": coalesce(authorDetails, author->{handle, profileUrl, profileImage}) {
       handle, profileUrl, profileImage
     },

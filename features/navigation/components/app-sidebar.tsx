@@ -18,21 +18,15 @@ import {
 } from "@/components/ui/sidebar";
 import type { BomboColorVariant } from "@/features/navigation/components/bombo-character";
 import type { TabItemIconVariant } from "@/components/ui/tab-items";
-import { shellFooterItems } from "@/features/navigation/sections";
 
 function SidebarFooterLinks() {
   return (
     <div className="border-t border-sidebar-border px-2 py-2">
       <div className="flex flex-col gap-1">
-        {shellFooterItems.map((item) => (
-          <TabItem
-            key={item.title}
-            iconName={item.iconName}
-            label={item.title}
-            variant="inactive"
-            className="w-full"
-          />
-        ))}
+        <TabItem iconName="envelope" iconWeight="regular" label="Contact"
+          variant="inactive" className="w-full"
+          render={<a href="mailto:jpedroalano765@gmail.com" />} />
+        <ThemeToggle />
       </div>
     </div>
   );
@@ -78,9 +72,6 @@ export const AppSidebar = memo(function AppSidebar({ animationPaused }: { animat
       </SidebarContent>
       <SidebarFooter className="gap-0 p-0">
         <SidebarFooterLinks />
-        <div className="px-3 pb-3 pt-2">
-          <ThemeToggle />
-        </div>
       </SidebarFooter>
     </Sidebar>
   );

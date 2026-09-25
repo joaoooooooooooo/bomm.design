@@ -61,6 +61,19 @@ export type GalleryItem = {
   _rev: string;
   collection?: "design" | "websites" | "tools";
   title?: string;
+  description?: string;
+  websiteDetails?: {
+    url?: string;
+    name?: string;
+    faviconUrl?: string;
+    favicon?: {
+      asset?: SanityImageAssetReference;
+      media?: unknown;
+      hotspot?: SanityImageHotspot;
+      crop?: SanityImageCrop;
+      _type: "image";
+    };
+  };
   authorDetails?: {
     profileImage?: {
       asset?: SanityImageAssetReference;
@@ -251,17 +264,30 @@ export type AllSanitySchemaTypes =
 
 // Source: ../brasa-app/features/gallery/sanity-query.ts
 // Variable: GALLERY_QUERY
-// Query: {  "cursorExists": $cursor == null || count(*[    _type == "galleryItem" && _id == $cursor && collection == $collection &&    ($category == null || $category in categories)  ]) > 0,  "items": *[    _type == "galleryItem" && collection in ["design", "websites", "tools"] &&    ($collection == null || collection == $collection) &&    ($category == null || $category in categories) &&    ($id == null || _id == $id) && ($cursor == null || _id > $cursor)  ] | order(_id asc)[0...49] {    _id, title, collection, categories, sourcePlatform, sourceUrl, externalPostId,    "author": coalesce(authorDetails, author->{handle, profileUrl, profileImage}) {      handle, profileUrl, profileImage    },    media {type, width, height, "videoUrl": coalesce(video.asset->url, videoUrl), image, "dimensions": image.asset->metadata.dimensions}  }}
+// Query: {  "cursorExists": $cursor == null || count(*[    _type == "galleryItem" && _id == $cursor && collection == $collection &&    ($category == null || $category in categories)  ]) > 0,  "items": *[    _type == "galleryItem" && collection in ["design", "websites", "tools"] &&    ($collection == null || collection == $collection) &&    ($category == null || $category in categories) &&    ($id == null || _id == $id) && ($cursor == null || _id > $cursor)  ] | order(_id asc)[0...49] {    _id, title, description, collection, categories, sourcePlatform, sourceUrl, externalPostId,    websiteDetails {name, url, favicon, faviconUrl},    "author": coalesce(authorDetails, author->{handle, profileUrl, profileImage}) {      handle, profileUrl, profileImage    },    media {type, width, height, "videoUrl": coalesce(video.asset->url, videoUrl), image, "dimensions": image.asset->metadata.dimensions}  }}
 export type GALLERY_QUERY_RESULT = {
   cursorExists: boolean;
   items: Array<{
     _id: string;
     title: string | null;
+    description: string | null;
     collection: "design" | "tools" | "websites" | null;
     categories: Array<string> | null;
     sourcePlatform: "Instagram" | "LinkedIn" | "Other" | "X" | null;
     sourceUrl: string | null;
     externalPostId: string | null;
+    websiteDetails: {
+      name: string | null;
+      url: string | null;
+      favicon: {
+        asset?: SanityImageAssetReference;
+        media?: unknown;
+        hotspot?: SanityImageHotspot;
+        crop?: SanityImageCrop;
+        _type: "image";
+      } | null;
+      faviconUrl: string | null;
+    } | null;
     author: {
       handle: string | null;
       profileUrl: string | null;
@@ -293,7 +319,7 @@ export type GALLERY_QUERY_RESULT = {
 // Query TypeMap
 declare global {
   interface SanityQueries {
-    '{\n  "cursorExists": $cursor == null || count(*[\n    _type == "galleryItem" && _id == $cursor && collection == $collection &&\n    ($category == null || $category in categories)\n  ]) > 0,\n  "items": *[\n    _type == "galleryItem" && collection in ["design", "websites", "tools"] &&\n    ($collection == null || collection == $collection) &&\n    ($category == null || $category in categories) &&\n    ($id == null || _id == $id) && ($cursor == null || _id > $cursor)\n  ] | order(_id asc)[0...49] {\n    _id, title, collection, categories, sourcePlatform, sourceUrl, externalPostId,\n    "author": coalesce(authorDetails, author->{handle, profileUrl, profileImage}) {\n      handle, profileUrl, profileImage\n    },\n    media {type, width, height, "videoUrl": coalesce(video.asset->url, videoUrl), image, "dimensions": image.asset->metadata.dimensions}\n  }\n}': GALLERY_QUERY_RESULT;
+    '{\n  "cursorExists": $cursor == null || count(*[\n    _type == "galleryItem" && _id == $cursor && collection == $collection &&\n    ($category == null || $category in categories)\n  ]) > 0,\n  "items": *[\n    _type == "galleryItem" && collection in ["design", "websites", "tools"] &&\n    ($collection == null || collection == $collection) &&\n    ($category == null || $category in categories) &&\n    ($id == null || _id == $id) && ($cursor == null || _id > $cursor)\n  ] | order(_id asc)[0...49] {\n    _id, title, description, collection, categories, sourcePlatform, sourceUrl, externalPostId,\n    websiteDetails {name, url, favicon, faviconUrl},\n    "author": coalesce(authorDetails, author->{handle, profileUrl, profileImage}) {\n      handle, profileUrl, profileImage\n    },\n    media {type, width, height, "videoUrl": coalesce(video.asset->url, videoUrl), image, "dimensions": image.asset->metadata.dimensions}\n  }\n}': GALLERY_QUERY_RESULT;
   }
 }
 // Lets @sanity/client releases that predate the global registry read it too

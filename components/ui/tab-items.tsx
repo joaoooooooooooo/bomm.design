@@ -6,11 +6,15 @@ import { cva, type VariantProps } from "class-variance-authority";
 import type React from "react";
 import { motion, useReducedMotion } from "motion/react";
 import {
+  SunIcon,
+  MoonIcon,
+  EnvelopeIcon,
   SignpostIcon,
   DiamondsFourIcon,
   BoundingBoxIcon,
   GraduationCapIcon,
   ImageIcon,
+  ImageSquareIcon,
   TextAaIcon,
   BookBookmarkIcon,
   LightbulbFilamentIcon,
@@ -55,11 +59,15 @@ import { Icon, iconVariants, type IconProps } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 
 const tabIcons = {
+  sun: SunIcon,
+  moon: MoonIcon,
+  envelope: EnvelopeIcon,
   "signpost": SignpostIcon,
   "diamonds-four": DiamondsFourIcon,
   "bounding-box": BoundingBoxIcon,
   "graduation-cap": GraduationCapIcon,
   "image": ImageIcon,
+  "image-square": ImageSquareIcon,
   "text-aa": TextAaIcon,
   "book-bookmark": BookBookmarkIcon,
   "lightbulb-filament": LightbulbFilamentIcon,

@@ -93,6 +93,7 @@ export function Gallery({ section, category, categories, initialPage }: {
         hasMore={hasMore}
         items={items}
         maxColumns={3}
+        overscan={1}
         loading={loading}
         error={error}
         onRetry={loadMore}

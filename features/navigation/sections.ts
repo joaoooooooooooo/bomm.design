@@ -23,6 +23,7 @@ const designCategoryIcons: Partial<Record<string, TabItemIconName>> = {
   "": "circles-four",
   branding: "copyright",
   print: "printer",
+  photography: "image-square",
   illustration: "scribble-loop",
   interface: "layout",
   "3d": "cube",
@@ -110,22 +111,5 @@ export const shellNavGroups: ShellNavGroup[] = [
         iconVariant: collectionDetails.tools.iconVariant,
       },
     ],
-  },
-];
-
-export const shellFooterItems: ShellNavItem[] = [
-  {
-    id: "design",
-    title: "Help Center",
-    href: "#/help",
-    iconName: "question",
-    iconVariant: "blue",
-  },
-  {
-    id: "tools",
-    title: "Documentation",
-    href: "#/documentation",
-    iconName: "book-open",
-    iconVariant: "pink",
   },
 ];

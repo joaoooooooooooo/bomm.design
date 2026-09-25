@@ -1,11 +1,20 @@
 "use client";
 
-import { useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import { useEffect, useSyncExternalStore } from "react";
+import { TabItem } from "@/components/ui/tab-items";
 
 type Theme = "light" | "dark";
 
 const STORAGE_KEY = "braza-theme";
+
+function subscribeTheme(onChange: () => void) {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, {attributes: true, attributeFilter: ["class"]});
+  return () => observer.disconnect();
+}
+
+const currentTheme = (): Theme => document.documentElement.classList.contains("dark") ? "dark" : "light";
+const serverTheme = (): Theme => "light";
 
 function getPreferredTheme(): Theme {
   if (typeof window === "undefined") return "light";
@@ -21,28 +30,25 @@ function getPreferredTheme(): Theme {
 }
 
 export function ThemeToggle() {
+  const theme = useSyncExternalStore(subscribeTheme, currentTheme, serverTheme);
   useEffect(() => {
     const nextTheme = getPreferredTheme();
     document.documentElement.classList.toggle("dark", nextTheme === "dark");
   }, []);
 
-  const toggleTheme = () => {
-    const nextTheme: Theme = document.documentElement.classList.contains("dark")
-      ? "light"
-      : "dark";
-
+  const selectTheme = (nextTheme: Theme) => {
     document.documentElement.classList.toggle("dark", nextTheme === "dark");
     window.localStorage.setItem(STORAGE_KEY, nextTheme);
   };
 
   return (
-    <Button
-      aria-label="Toggle color theme"
-      onClick={toggleTheme}
-      size="sm"
-      variant="outline"
-    >
-      Toggle theme
-    </Button>
+    <TabItem
+      label={theme === "dark" ? "Light mode" : "Dark mode"}
+      iconName={theme === "dark" ? "sun" : "moon"}
+      iconWeight="regular"
+      variant="inactive"
+      className="w-full"
+      onClick={() => selectTheme(theme === "dark" ? "light" : "dark")}
+    />
   );
 }

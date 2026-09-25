@@ -5,7 +5,7 @@ import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
 import type * as React from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { cn } from "@/lib/utils";
+import { buttonPressAnimation, cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner";
 
 export const buttonVariants = cva(
@@ -96,8 +96,8 @@ export function Button({
     render:
       render ?? (
         <motion.button
-          whileTap={reduceMotion ? undefined : { scale: 0.95 }}
-          transition={{ type: "spring", duration: 0.5, bounce: 0 }}
+          {...buttonPressAnimation}
+          whileTap={reduceMotion ? undefined : buttonPressAnimation.whileTap}
         />
       ),
   });

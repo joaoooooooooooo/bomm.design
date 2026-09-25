@@ -33,7 +33,8 @@ export type GalleryPost = {
   description?: string;
   section: CollectionId;
   categoryIds: string[];
-  author: Author;
+  author?: Author;
+  website?: { name: string; domain: string; favicon: string };
   media: GalleryMedia;
   source: { label?: string; url: string; platform?: string };
   externalPostId?: string;
