@@ -36,6 +36,9 @@ export function MediaCard({
   ...props
 }: MediaCardProps): React.ReactElement {
   const isExpanded = variant === "expanded";
+  const media = !isExpanded && item.media.type === "image" && item.media.cardSrc
+    ? { ...item.media, src: item.media.cardSrc }
+    : item.media;
   const reduceMotion = useReducedMotion();
   const shouldAutoPlay = autoPlay ?? variant === "default";
   const isWebsite = item.section === "websites";
@@ -46,8 +49,8 @@ export function MediaCard({
   const [readySource, setReadySource] = useState<string>();
   const [requestedSource, setRequestedSource] = useState<string>();
   const mediaRef = useRef<HTMLDivElement>(null);
-  const shouldLoad = isExpanded || requestedSource === item.media.src;
-  const isReady = readySource === item.media.src;
+  const shouldLoad = isExpanded || requestedSource === media.src;
+  const isReady = readySource === media.src;
   // The grid and its placeholder use the same metadata, before bytes are loaded.
   const mediaAspectRatio = `${item.media.width} / ${item.media.height}`;
 
@@ -56,12 +59,12 @@ export function MediaCard({
     if (!element || shouldLoad) return;
     const observer = new IntersectionObserver(([entry]) => {
       if (!entry.isIntersecting) return;
-      setRequestedSource(item.media.src);
+      setRequestedSource(media.src);
       observer.disconnect();
     });
     observer.observe(element);
     return () => observer.disconnect();
-  }, [item.media.src, shouldLoad]);
+  }, [media.src, shouldLoad]);
 
   return (
     <article
@@ -106,9 +109,9 @@ export function MediaCard({
                 : "absolute inset-0",
             )}
             fit={isExpanded ? "contain" : "cover"}
-            media={item.media}
+            media={media}
             onDimensionsChange={item.media.type === "video" ? onMediaDimensionsChange : undefined}
-            onReady={() => setReadySource(item.media.src)}
+            onReady={() => setReadySource(media.src)}
             preload={isExpanded ? "auto" : "metadata"}
           />}
           {!isExpanded && isReady ? (

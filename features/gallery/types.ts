@@ -6,7 +6,7 @@ export type MediaDimensions = { width: number; height: number };
 export type GalleryMedia = MediaDimensions & {
   src: string;
   alt: string;
-} & ({ type: "image" } | { type: "video"; poster?: string });
+} & ({ type: "image"; cardSrc?: string } | { type: "video"; poster?: string });
 
 export type Author = {
   id: string;

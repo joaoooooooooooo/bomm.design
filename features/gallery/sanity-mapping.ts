@@ -40,6 +40,7 @@ export function mapSanityGalleryItem(item: SanityGalleryItem, config: { projectI
     media = {
       type: "image",
       src: builder.image(item.media.image).width(Math.min(1600, croppedWidth)).fit("max").auto("format").url(),
+      cardSrc: builder.image(item.media.image).width(Math.min(720, croppedWidth)).fit("max").auto("format").url(),
       alt: mediaLabel, width: croppedWidth, height: croppedHeight,
     };
   } else if (item.media?.type === "video" && httpUrl(item.media.videoUrl)) {
