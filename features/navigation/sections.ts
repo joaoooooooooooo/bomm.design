@@ -14,7 +14,7 @@ export function isCollection(value: string): value is CollectionId {
 
 export const collectionDetails: Record<CollectionId, { title: string; introduction: string; iconVariant: TabItemIconVariant }> = {
   logos: { title: "Logos", introduction: "Marcas que ficam na cabeça. Uma coleção de logos para explorar e se inspirar", iconVariant: "teal" },
-  design: { title: "Design", introduction: "Curadoria humana e sem compromisso de bons designs do Brasil (e do mundo)", iconVariant: "blue" },
+  design: { title: "Design", introduction: "Uma curadoria humana, brasileira e sem compromisso de design e arte encontrados pelo mundo digital.", iconVariant: "blue" },
   websites: { title: "Websites", introduction: "Sites do Brasil (e do mundo) para explorar e se inspirar", iconVariant: "orange" },
   tools: { title: "Tools", introduction: "Ferramentas para criar, experimentar e tirar ideias do papel", iconVariant: "pink" },
 };

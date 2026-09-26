@@ -10,8 +10,8 @@ export function AppHeader({ section, categories, activeCategory }: {
 }) {
   return (
     <>
-      <header className="flex max-w-xl flex-col gap-4 px-4 pb-8 pt-6 md:px-6 md:pb-12 md:pt-8" data-section-header={section}>
-        <h1 className="text-2xl font-normal md:text-3xl">{collectionDetails[section].introduction}</h1>
+      <header className="flex max-w-2xl flex-col gap-4 px-4 pb-8 pt-6 md:px-6 md:pb-12 md:pt-8" data-section-header={section}>
+        <h1 className="text-2xl font-normal md:text-4xl md:tracking-[-0.8px]">{collectionDetails[section].introduction}</h1>
       </header>
       <div className="sticky top-0 z-20 mb-4 w-full shrink-0 bg-background pt-[env(safe-area-inset-top)] md:pt-0">
         <div className="border-b border-border md:hidden">
