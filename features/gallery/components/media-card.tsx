@@ -109,7 +109,8 @@ export function MediaCard({
                 : "absolute inset-0",
             )}
             fit={isExpanded ? "contain" : "cover"}
-            media={media}
+            media={item.media}
+            imageSize={isExpanded ? "full" : "card"}
             onDimensionsChange={item.media.type === "video" ? onMediaDimensionsChange : undefined}
             onReady={() => setReadySource(media.src)}
             preload={isExpanded ? "auto" : "metadata"}

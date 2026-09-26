@@ -201,6 +201,7 @@ export function MediaPreview({
   controls = false,
   className,
   fit = "cover",
+  imageSize = "full",
   media,
   onDimensionsChange,
   onReady,
@@ -211,6 +212,7 @@ export function MediaPreview({
   controls?: boolean;
   className?: string;
   fit?: "contain" | "cover";
+  imageSize?: "card" | "full";
   media: GalleryPost["media"];
   onDimensionsChange?: (dimensions: MediaDimensions) => void;
   onReady?: () => void;
@@ -246,6 +248,10 @@ export function MediaPreview({
       className={cn("h-full w-full", objectFitClassName, className)}
       draggable={false}
       height={media.height}
+      loading={imageSize === "card" ? "lazy" : undefined}
+      // Auto sizes uses the laid-out width; older browsers get a capped fallback.
+      sizes={imageSize === "card" && media.cardSrcSet ? "auto, (max-width: 720px) 100vw, 720px" : undefined}
+      srcSet={imageSize === "card" ? media.cardSrcSet : undefined}
       onLoad={(event) => {
         onDimensionsChange?.({
           height: event.currentTarget.naturalHeight,
@@ -254,7 +260,7 @@ export function MediaPreview({
         onReady?.();
       }}
       onError={onReady}
-      src={media.src}
+      src={imageSize === "card" ? media.cardSrc ?? media.src : media.src}
       width={media.width}
     />
   );

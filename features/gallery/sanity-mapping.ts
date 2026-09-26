@@ -37,10 +37,13 @@ export function mapSanityGalleryItem(item: SanityGalleryItem, config: { projectI
     const crop = item.media.image.crop;
     const croppedWidth = Math.max(1, Math.round(width * (1 - (crop?.left ?? 0) - (crop?.right ?? 0))));
     const croppedHeight = Math.max(1, Math.round(height * (1 - (crop?.top ?? 0) - (crop?.bottom ?? 0))));
+    const cardWidths = [...new Set([360, 540, 720].map((width) => Math.min(width, croppedWidth)))];
+    const cardImage = builder.image(item.media.image).fit("max").auto("format").quality(70);
     media = {
       type: "image",
       src: builder.image(item.media.image).width(Math.min(1600, croppedWidth)).fit("max").auto("format").url(),
-      cardSrc: builder.image(item.media.image).width(Math.min(720, croppedWidth)).fit("max").auto("format").url(),
+      cardSrc: cardImage.width(Math.min(720, croppedWidth)).url(),
+      cardSrcSet: cardWidths.map((width) => `${cardImage.width(width).url()} ${width}w`).join(", "),
       alt: mediaLabel, width: croppedWidth, height: croppedHeight,
     };
   } else if (item.media?.type === "video" && httpUrl(item.media.videoUrl)) {

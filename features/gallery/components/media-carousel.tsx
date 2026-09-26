@@ -154,6 +154,7 @@ function CarouselSlide({
           className="h-full w-full rounded-2xl"
           fit="contain"
           media={item.media}
+          imageSize={shouldPlay ? "full" : "card"}
           videoHandoff={videoHandoff}
           onDimensionsChange={({ width, height }) => {
             if (width > 0 && height > 0) setMediaRatio(width / height);
